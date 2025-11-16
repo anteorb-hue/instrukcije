@@ -30,6 +30,9 @@ export default function Navbar() {
             <Link href="/tutors" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
               Pronađi instruktora
             </Link>
+            <Link href="/forum" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
+              Forum
+            </Link>
             <Link href="/become-tutor" className="text-gray-700 hover:text-primary-600 font-medium transition-colors">
               Postani instruktor
             </Link>
@@ -111,6 +114,9 @@ export default function Navbar() {
             <div className="flex flex-col space-y-4">
               <Link href="/tutors" className="text-gray-700 hover:text-primary-600 font-medium">
                 Pronađi instruktora
+              </Link>
+              <Link href="/forum" className="text-gray-700 hover:text-primary-600 font-medium">
+                Forum
               </Link>
               <Link href="/become-tutor" className="text-gray-700 hover:text-primary-600 font-medium">
                 Postani instruktor
