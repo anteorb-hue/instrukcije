@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, Search, Bell, User, LogOut, BookOpen, MessageSquare, Calendar } from 'lucide-react'
+import { Menu, X, Search, Bell, User, LogOut, BookOpen, MessageSquare, Calendar, Award } from 'lucide-react'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
@@ -75,6 +75,13 @@ export default function Navbar() {
                         <User className="w-4 h-4" />
                         <span>Moj profil</span>
                       </Link>
+                      <Link
+                        href="/certificates"
+                        className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-50 transition-colors"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>Certifikati</span>
+                      </Link>
                       <button
                         onClick={() => signOut()}
                         className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-50 transition-colors w-full text-left text-red-600"
@@ -143,6 +150,9 @@ export default function Navbar() {
                   </Link>
                   <Link href="/profile" className="text-gray-700 hover:text-primary-600 font-medium">
                     Moj profil
+                  </Link>
+                  <Link href="/certificates" className="text-gray-700 hover:text-primary-600 font-medium">
+                    Certifikati
                   </Link>
                   <button
                     onClick={() => signOut()}
