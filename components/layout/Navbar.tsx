@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { Menu, X, Search, Bell, User, LogOut, BookOpen, MessageSquare, Calendar } from 'lucide-react'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
+import NotificationCenter from '@/components/notifications/NotificationCenter'
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -51,10 +52,7 @@ export default function Navbar() {
                     Termini
                   </Button>
                 </Link>
-                <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Bell className="w-5 h-5 text-gray-700" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                <NotificationCenter />
                 <div className="relative">
                   <button
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
@@ -127,6 +125,9 @@ export default function Navbar() {
                   </Link>
                   <Link href="/bookings" className="text-gray-700 hover:text-primary-600 font-medium">
                     Termini
+                  </Link>
+                  <Link href="/notifications" className="text-gray-700 hover:text-primary-600 font-medium">
+                    Notifikacije
                   </Link>
                   <Link href="/profile" className="text-gray-700 hover:text-primary-600 font-medium">
                     Moj profil
