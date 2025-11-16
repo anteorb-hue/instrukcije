@@ -1,0 +1,319 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum VideoProvider {
+  ZOOM
+  GOOGLE_MEET
+  MICROSOFT_TEAMS
+}
+
+enum EducationLevel {
+  OSNOVNA_SKOLA
+  SREDNJA_SKOLA
+  FAKULTET
+  OSTALO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(STUDENT)
+  avatar        String?
+  phone         String?
+  bio           String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Tutor specific fields
+  tutorProfile  TutorProfile?
+
+  // Student specific fields
+  studentProfile StudentProfile?
+
+  // Relations
+  sentMessages      Message[]     @relation("SentMessages")
+  receivedMessages  Message[]     @relation("ReceivedMessages")
+  bookingsAsStudent Booking[]     @relation("StudentBookings")
+  bookingsAsTutor   Booking[]     @relation("TutorBookings")
+  reviews           Review[]      @relation("ReviewsGiven")
+  receivedReviews   Review[]      @relation("ReviewsReceived")
+  payments          Payment[]
+  notifications     Notification[]
+  favorites         Favorite[]
+
+  @@map("users")
+}
+
+model TutorProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title             String
+  hourlyRate        Float
+  experience        Int      // years
+  verified          Boolean  @default(false)
+  videoIntroUrl     String?
+  languages         String[] // JSON array of languages
+  availableOnline   Boolean  @default(true)
+  availableInPerson Boolean  @default(false)
+
+  // Education
+  education         String   @db.Text
+  certifications    String[] // JSON array
+
+  // Statistics
+  totalSessions     Int      @default(0)
+  averageRating     Float    @default(0)
+  responseTime      Int?     // in minutes
+
+  // Subjects taught
+  subjects          SubjectTaught[]
+
+  // Education levels
+  educationLevels   EducationLevel[]
+
+  // Availability
+  availability      Availability[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("tutor_profiles")
+}
+
+model StudentProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  educationLevel    EducationLevel
+  interests         String[] // JSON array
+  learningGoals     String?  @db.Text
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("student_profiles")
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameEn      String   // English name
+  description String?  @db.Text
+  icon        String?
+  category    String   // Matematika, Jezici, Programiranje, etc.
+
+  tutors      SubjectTaught[]
+  bookings    Booking[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("subjects")
+}
+
+model SubjectTaught {
+  id              String        @id @default(cuid())
+  tutorProfileId  String
+  tutorProfile    TutorProfile  @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+
+  subjectId       String
+  subject         Subject       @relation(fields: [subjectId], references: [id])
+
+  experienceYears Int           @default(0)
+
+  @@unique([tutorProfileId, subjectId])
+  @@map("subjects_taught")
+}
+
+model Availability {
+  id              String        @id @default(cuid())
+  tutorProfileId  String
+  tutorProfile    TutorProfile  @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+
+  dayOfWeek       Int           // 0-6 (Sunday-Saturday)
+  startTime       String        // HH:mm format
+  endTime         String        // HH:mm format
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("availability")
+}
+
+model Booking {
+  id              String          @id @default(cuid())
+
+  studentId       String
+  student         User            @relation("StudentBookings", fields: [studentId], references: [id])
+
+  tutorId         String
+  tutor           User            @relation("TutorBookings", fields: [tutorId], references: [id])
+
+  subjectId       String
+  subject         Subject         @relation(fields: [subjectId], references: [id])
+
+  scheduledAt     DateTime
+  duration        Int             // in minutes
+  status          SessionStatus   @default(SCHEDULED)
+
+  // Video session details
+  videoProvider   VideoProvider   @default(ZOOM)
+  meetingUrl      String?
+  meetingId       String?
+  meetingPassword String?
+
+  // Session details
+  notes           String?         @db.Text
+  studentNotes    String?         @db.Text
+  tutorNotes      String?         @db.Text
+
+  // Pricing
+  price           Float
+
+  // Relations
+  payment         Payment?
+  review          Review?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("bookings")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+
+  amount          Float
+  currency        String        @default("EUR")
+  status          PaymentStatus @default(PENDING)
+
+  // Stripe details
+  stripePaymentId String?
+  stripeSessionId String?
+
+  paidAt          DateTime?
+  refundedAt      DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+model Review {
+  id              String   @id @default(cuid())
+
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+
+  reviewerId      String
+  reviewer        User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  reviewedId      String
+  reviewed        User     @relation("ReviewsReceived", fields: [reviewedId], references: [id])
+
+  rating          Int      // 1-5
+  comment         String?  @db.Text
+
+  // Tutor-specific ratings
+  communication   Int?     // 1-5
+  expertise       Int?     // 1-5
+  punctuality     Int?     // 1-5
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  receiverId  String
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  content     String   @db.Text
+  read        Boolean  @default(false)
+  readAt      DateTime?
+
+  // Attachments
+  attachments String[] // JSON array of file URLs
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // booking_confirmed, message_received, review_received, etc.
+  title     String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  data      String?  @db.Text // JSON data
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tutorId   String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tutorId])
+  @@map("favorites")
+}
