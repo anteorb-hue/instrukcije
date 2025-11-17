@@ -1,7 +1,8 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
-import { prisma } from './prisma'
+// import { prisma } from './prisma' // Disabled for mock auth
+import { mockUsers } from './mock-users'
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -22,15 +23,8 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-          include: {
-            tutorProfile: true,
-            studentProfile: true,
-          },
-        })
+        // Use mock users instead of database
+        const user = mockUsers.find(u => u.email === credentials.email)
 
         if (!user) {
           return null
