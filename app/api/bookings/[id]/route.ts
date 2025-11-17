@@ -134,6 +134,47 @@ export async function PUT(
       }
     }
 
+    // Apply penalty for no-show
+    if ((status === 'NO_SHOW_TUTOR' || status === 'NO_SHOW_STUDENT') &&
+        !existingBooking.status.startsWith('NO_SHOW')) {
+      try {
+        const noShowUserId = status === 'NO_SHOW_TUTOR'
+          ? existingBooking.tutorId
+          : existingBooking.studentId
+
+        const userType = status === 'NO_SHOW_TUTOR' ? 'Instruktor' : 'Učenik'
+
+        await applyPenalty(
+          noShowUserId,
+          'NO_SHOW',
+          `${userType} se nije pojavio na zakazanoj instrukciji`,
+          {
+            bookingId: params.id,
+            description: `No-show za instrukciju zakazanu ${existingBooking.scheduledAt.toLocaleString('hr-HR')}`
+          }
+        )
+        console.log(`No-show penalty applied to user: ${noShowUserId}`)
+
+        // Create notification for the other party
+        const recipientId = status === 'NO_SHOW_TUTOR'
+          ? existingBooking.studentId
+          : existingBooking.tutorId
+
+        await prisma.notification.create({
+          data: {
+            userId: recipientId,
+            type: 'booking_no_show',
+            title: 'Korisnik se nije pojavio',
+            message: `${userType} se nije pojavio na zakazanoj instrukciji`,
+            data: JSON.stringify({ bookingId: params.id }),
+          },
+        })
+      } catch (error) {
+        console.error('Error applying no-show penalty:', error)
+        // Don't fail the request if penalty fails
+      }
+    }
+
     // Create notification if reschedule
     if (scheduledAt) {
       const recipientId = existingBooking.studentId === session.user.id

@@ -20,6 +20,8 @@ enum SessionStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  NO_SHOW_TUTOR    // Tutor didn't show up
+  NO_SHOW_STUDENT  // Student didn't show up
 }
 
 enum PaymentStatus {
