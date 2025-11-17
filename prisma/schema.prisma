@@ -428,6 +428,7 @@ model RewardCatalog {
   pointsCost      Int
   value           Float
 
+  userRole        UserRole?  // TUTOR, STUDENT, or null for both
   active          Boolean    @default(true)
   limitPerUser    Int?       // Max times user can redeem this
   validDays       Int?       // How many days reward is valid after redemption
@@ -442,4 +443,5 @@ model RewardCatalog {
 
   @@map("reward_catalog")
   @@index([active])
+  @@index([userRole])
 }

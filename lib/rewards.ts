@@ -300,9 +300,7 @@ export async function rewardReview(reviewId: string) {
 /**
  * Process referral rewards
  */
-export async function rewardReferral(referrerId: string, referredId: string, referredRole: 'TUTOR' | 'STUDENT') {
-  const points = referredRole === 'TUTOR' ? POINTS.REFERRAL_TUTOR : POINTS.REFERRAL_STUDENT
-
+export async function rewardReferral(referrerId: string, referredId: string) {
   const referred = await prisma.user.findUnique({
     where: { id: referredId },
     select: { name: true, role: true },
@@ -311,6 +309,8 @@ export async function rewardReferral(referrerId: string, referredId: string, ref
   if (!referred) {
     throw new Error('Referred user not found')
   }
+
+  const points = referred.role === 'TUTOR' ? POINTS.REFERRAL_TUTOR : POINTS.REFERRAL_STUDENT
 
   // Award points to referrer
   const result = await addPoints(
@@ -512,8 +512,26 @@ export async function getUserPointsSummary(userId: string) {
  * Get available rewards from catalog
  */
 export async function getAvailableRewards(userId?: string) {
+  let userRole = null
+
+  // Get user role if userId provided
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
+    userRole = user?.role
+  }
+
+  // Fetch catalog filtered by user role
   const catalog = await prisma.rewardCatalog.findMany({
-    where: { active: true },
+    where: {
+      active: true,
+      OR: [
+        { userRole: null }, // Available for all
+        ...(userRole ? [{ userRole }] : []),
+      ],
+    },
     orderBy: { pointsCost: 'asc' },
   })
 

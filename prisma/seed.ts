@@ -184,6 +184,139 @@ async function main() {
     console.log('✓ Added tutor availability')
   }
 
+  // Seed Reward Catalog
+  console.log('\n📦 Seeding reward catalog...')
+
+  const tutorRewards = [
+    {
+      type: 'COMMISSION_DISCOUNT',
+      title: '5% Popust na proviziju',
+      description: 'Smanjite platformsku proviziju za 5% tijekom 1 mjeseca. Idealno za aktivne instruktore koji žele povećati zaradu.',
+      pointsCost: 500,
+      value: 5,
+      userRole: 'TUTOR',
+      validDays: 30,
+      icon: 'Percent',
+    },
+    {
+      type: 'COMMISSION_DISCOUNT',
+      title: '10% Popust na proviziju',
+      description: 'Smanjite platformsku proviziju za 10% tijekom 1 mjeseca. Značajno povećanje zarade za lojalne instruktore.',
+      pointsCost: 1000,
+      value: 10,
+      userRole: 'TUTOR',
+      validDays: 30,
+      icon: 'Percent',
+    },
+    {
+      type: 'FEATURED',
+      title: 'Featured Status - 7 dana',
+      description: 'Budite istaknuti na homepage i u search rezultatima 7 dana. Povećajte svoju vidljivost i privucite nove učenike.',
+      pointsCost: 2000,
+      value: 7,
+      userRole: 'TUTOR',
+      validDays: 7,
+      icon: 'Star',
+    },
+    {
+      type: 'COMMISSION_DISCOUNT',
+      title: '15% Popust na proviziju - 3 mjeseca',
+      description: 'Vrhunski popust od 15% na proviziju tijekom 3 mjeseca. Za najlojalnije i najaktivnije instruktore.',
+      pointsCost: 5000,
+      value: 15,
+      userRole: 'TUTOR',
+      validDays: 90,
+      icon: 'Percent',
+    },
+    {
+      type: 'PREMIUM',
+      title: 'Premium Profil - 6 mjeseci',
+      description: 'Besplatni premium profil sa svim prednostima tijekom 6 mjeseci. Uključuje prioritet u preporukama i napredne statistike.',
+      pointsCost: 10000,
+      value: 1,
+      userRole: 'TUTOR',
+      validDays: 180,
+      icon: 'Crown',
+    },
+  ]
+
+  const studentRewards = [
+    {
+      type: 'VOUCHER',
+      title: '5 EUR Voucher',
+      description: 'Popust od 5 EUR na sljedeću instrukciju. Idealno za redovite učenike.',
+      pointsCost: 100,
+      value: 5,
+      userRole: 'STUDENT',
+      validDays: 30,
+      icon: 'Gift',
+    },
+    {
+      type: 'VOUCHER',
+      title: '10 EUR Voucher',
+      description: 'Popust od 10 EUR na sljedeću instrukciju. Nagrada za aktivne učenike.',
+      pointsCost: 200,
+      value: 10,
+      userRole: 'STUDENT',
+      validDays: 30,
+      icon: 'Gift',
+    },
+    {
+      type: 'FREE_LESSON',
+      title: 'Besplatna Instrukcija',
+      description: 'Potpuno besplatna instrukcija u vrijednosti do 25 EUR. Odličan način da isprobate novog instruktora.',
+      pointsCost: 500,
+      value: 25,
+      userRole: 'STUDENT',
+      validDays: 60,
+      icon: 'Award',
+    },
+    {
+      type: 'VOUCHER',
+      title: '30 EUR Voucher',
+      description: 'Veliki popust od 30 EUR za lojalne učenike. Iskoristite za paket instrukcija.',
+      pointsCost: 1000,
+      value: 30,
+      userRole: 'STUDENT',
+      validDays: 30,
+      icon: 'DollarSign',
+    },
+    {
+      type: 'PREMIUM',
+      title: 'Premium Pristup - 1 mjesec',
+      description: 'Premium pristup sa prioritet bookingom i ekskluzivnim instruktorima tijekom 1 mjeseca.',
+      pointsCost: 2000,
+      value: 1,
+      userRole: 'STUDENT',
+      validDays: 30,
+      icon: 'Crown',
+    },
+  ]
+
+  for (const reward of tutorRewards) {
+    await prisma.rewardCatalog.upsert({
+      where: { id: `tutor-${reward.type.toLowerCase()}-${reward.pointsCost}` },
+      update: {},
+      create: {
+        id: `tutor-${reward.type.toLowerCase()}-${reward.pointsCost}`,
+        ...reward,
+      },
+    })
+  }
+  console.log(`✓ Created ${tutorRewards.length} tutor rewards`)
+
+  for (const reward of studentRewards) {
+    await prisma.rewardCatalog.upsert({
+      where: { id: `student-${reward.type.toLowerCase()}-${reward.pointsCost}` },
+      update: {},
+      create: {
+        id: `student-${reward.type.toLowerCase()}-${reward.pointsCost}`,
+        ...reward,
+      },
+    })
+  }
+  console.log(`✓ Created ${studentRewards.length} student rewards`)
+
   console.log('🎉 Database seed completed!')
   console.log('\nTest credentials:')
   console.log('Admin: admin@instrukcije.hr / password123')
