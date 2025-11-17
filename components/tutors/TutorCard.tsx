@@ -23,10 +23,31 @@ interface TutorCardProps {
     availableOnline: boolean
     availableInPerson: boolean
     responseTime?: number
+    tier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'ELITE' | null
   }
 }
 
 export default function TutorCard({ tutor }: TutorCardProps) {
+  const getTierBadge = () => {
+    if (!tutor.tier || tutor.tier === 'BRONZE') return null
+
+    const tierConfig = {
+      SILVER: { emoji: '🥈', label: 'Silver', className: 'bg-gradient-to-r from-gray-400 to-gray-600 text-white' },
+      GOLD: { emoji: '🥇', label: 'Gold', className: 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white' },
+      PLATINUM: { emoji: '💎', label: 'Platinum', className: 'bg-gradient-to-r from-purple-400 to-purple-600 text-white' },
+      ELITE: { emoji: '⭐', label: 'Elite', className: 'bg-gradient-to-r from-pink-500 to-purple-600 text-white' },
+    }
+
+    const config = tierConfig[tutor.tier as keyof typeof tierConfig]
+    if (!config) return null
+
+    return (
+      <Badge className={`${config.className} font-semibold shadow-sm`}>
+        {config.emoji} {config.label}
+      </Badge>
+    )
+  }
+
   return (
     <Card hover className="flex flex-col h-full">
       <Link href={`/tutors/${tutor.id}`}>
@@ -47,9 +68,12 @@ export default function TutorCard({ tutor }: TutorCardProps) {
           </div>
 
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors">
-              {tutor.name}
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors">
+                {tutor.name}
+              </h3>
+              {getTierBadge()}
+            </div>
             <p className="text-sm text-gray-600 mt-1">{tutor.title}</p>
 
             <div className="flex items-center space-x-4 mt-2">
