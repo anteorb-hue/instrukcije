@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { rewardReferral } from '@/lib/rewards'
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, role } = await req.json()
+    const { name, email, password, role, referralCode } = await req.json()
 
     // Validate input
     if (!name || !email || !password || !role) {
@@ -56,6 +57,27 @@ export async function POST(req: Request) {
           educationLevel: 'OSNOVNA_SKOLA',
         },
       })
+    }
+
+    // Process referral code if provided
+    if (referralCode && referralCode.trim() !== '') {
+      try {
+        // Find referrer by code
+        const referrerPoints = await prisma.userPoints.findUnique({
+          where: { referralCode: referralCode.trim() },
+        })
+
+        if (referrerPoints) {
+          // Award referral points to both users
+          await rewardReferral(referrerPoints.userId, user.id)
+          console.log(`Referral bonus applied: ${referrerPoints.userId} -> ${user.id}`)
+        } else {
+          console.warn(`Invalid referral code provided: ${referralCode}`)
+        }
+      } catch (error) {
+        console.error('Error processing referral:', error)
+        // Don't fail registration if referral processing fails
+      }
     }
 
     return NextResponse.json(

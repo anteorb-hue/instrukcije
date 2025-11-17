@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -21,17 +21,18 @@ import {
   Crown,
   Percent,
   DollarSign,
+  Loader2,
 } from 'lucide-react'
 
-// Mock data - u produkciji dohvaćaj sa servera
-const userData = {
-  name: 'Ana Horvat',
+// Default/loading data
+const defaultUserData = {
+  name: 'Korisnik',
   role: 'TUTOR',
-  totalPoints: 1250,
-  currentTier: 'GOLD',
-  pointsToNextTier: 1750,
-  referralCode: 'ANA-HORVAT-2024',
-  totalReferrals: 3,
+  totalPoints: 0,
+  currentTier: 'BRONZE',
+  pointsToNextTier: 500,
+  referralCode: '',
+  totalReferrals: 0,
 }
 
 const tiers = [
@@ -195,9 +196,111 @@ const pointsHistory = [
 export default function RewardsPage() {
   const [showReferral, setShowReferral] = useState(false)
   const [selectedReward, setSelectedReward] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [userData, setUserData] = useState(defaultUserData)
+  const [rewardsData, setRewardsData] = useState(availableRewards)
+  const [historyData, setHistoryData] = useState(pointsHistory)
+  const [redeeming, setRedeeming] = useState(false)
+
+  // Fetch user points data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch points summary
+        const pointsRes = await fetch('/api/rewards/points')
+        if (pointsRes.ok) {
+          const pointsData = await pointsRes.json()
+          setUserData({
+            name: pointsData.userName || 'Korisnik',
+            role: pointsData.userRole || 'TUTOR',
+            totalPoints: pointsData.totalPoints || 0,
+            currentTier: pointsData.currentTier || 'BRONZE',
+            pointsToNextTier: pointsData.pointsToNextTier || 0,
+            referralCode: pointsData.referralCode || '',
+            totalReferrals: pointsData.totalReferrals || 0,
+          })
+        }
+
+        // Fetch available rewards catalog
+        const catalogRes = await fetch('/api/rewards/catalog')
+        if (catalogRes.ok) {
+          const catalogData = await catalogRes.json()
+          // Map catalog data to UI format
+          const mappedRewards = catalogData.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            points: item.pointsCost,
+            type: item.type.toLowerCase(),
+            icon: getIconForType(item.type),
+            color: getColorForType(item.type),
+          }))
+          setRewardsData(mappedRewards)
+        }
+
+        // Fetch transaction history
+        const historyRes = await fetch('/api/rewards/history?limit=20')
+        if (historyRes.ok) {
+          const historyResData = await historyRes.json()
+          const mappedHistory = historyResData.transactions.map((t: any) => ({
+            id: t.id,
+            points: t.points,
+            type: t.type.toLowerCase(),
+            reason: t.reason,
+            date: new Date(t.createdAt),
+          }))
+          setHistoryData(mappedHistory)
+        }
+      } catch (error) {
+        console.error('Error fetching rewards data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const getIconForType = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'voucher':
+        return Gift
+      case 'featured':
+        return Star
+      case 'discount':
+      case 'commission_discount':
+        return Percent
+      case 'free_lesson':
+        return Award
+      case 'premium':
+        return Crown
+      default:
+        return Gift
+    }
+  }
+
+  const getColorForType = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'voucher':
+        return 'bg-green-100 text-green-600'
+      case 'featured':
+        return 'bg-yellow-100 text-yellow-600'
+      case 'discount':
+      case 'commission_discount':
+        return 'bg-blue-100 text-blue-600'
+      case 'free_lesson':
+        return 'bg-purple-100 text-purple-600'
+      case 'premium':
+        return 'bg-purple-100 text-purple-600'
+      default:
+        return 'bg-gray-100 text-gray-600'
+    }
+  }
 
   const currentTierIndex = tiers.findIndex((tier) => tier.name.toUpperCase() === userData.currentTier)
-  const currentTier = tiers[currentTierIndex]
+  const currentTier = tiers[currentTierIndex] || tiers[0]
   const nextTier = tiers[currentTierIndex + 1]
 
   const progressToNextTier = nextTier
@@ -215,11 +318,56 @@ export default function RewardsPage() {
     }).format(date)
   }
 
-  const handleRedeemReward = (rewardId: string, points: number) => {
-    if (userData.totalPoints >= points) {
-      // TODO: Implement API call to redeem reward
-      alert(`Uspješno ste iskoristili nagradu! Oduzeto ${points} bodova.`)
-      setSelectedReward(null)
+  const handleRedeemReward = async (reward: any) => {
+    if (userData.totalPoints < reward.points) {
+      alert('Nemate dovoljno bodova za ovu nagradu!')
+      return
+    }
+
+    if (redeeming) return
+
+    try {
+      setRedeeming(true)
+
+      const response = await fetch('/api/rewards/redeem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rewardType: reward.type.toUpperCase(),
+          title: reward.title,
+          pointsCost: reward.points,
+          value: parseFloat(reward.description.match(/\d+/)?.[0] || '0'),
+          validDays: 30,
+          description: reward.description,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert(data.message || `Uspješno ste iskoristili nagradu! Oduzeto ${reward.points} bodova.`)
+        setSelectedReward(null)
+
+        // Refresh data
+        const pointsRes = await fetch('/api/rewards/points')
+        if (pointsRes.ok) {
+          const pointsData = await pointsRes.json()
+          setUserData({
+            ...userData,
+            totalPoints: pointsData.totalPoints || 0,
+            currentTier: pointsData.currentTier || userData.currentTier,
+          })
+        }
+      } else {
+        alert(data.error || 'Greška pri iskorištavanju nagrade')
+      }
+    } catch (error) {
+      console.error('Error redeeming reward:', error)
+      alert('Greška pri iskorištavanju nagrade')
+    } finally {
+      setRedeeming(false)
     }
   }
 
@@ -228,6 +376,17 @@ export default function RewardsPage() {
       `https://instrukcije.hr/ref/${userData.referralCode}`
     )
     alert('Referral link kopiran u clipboard!')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 text-purple-600 animate-spin mx-auto mb-4" />
+          <p className="text-lg text-gray-600">Učitavam podatke o bodovima...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -367,7 +526,7 @@ export default function RewardsPage() {
                 💎 Dostupne Nagrade
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableRewards.map((reward) => {
+                {rewardsData.map((reward) => {
                   const Icon = reward.icon
                   const canAfford = userData.totalPoints >= reward.points
 
@@ -413,7 +572,7 @@ export default function RewardsPage() {
               </h2>
               <Card className="overflow-hidden">
                 <div className="divide-y divide-gray-200">
-                  {pointsHistory.map((transaction) => (
+                  {historyData.map((transaction) => (
                     <div
                       key={transaction.id}
                       className="p-4 hover:bg-gray-50 transition-colors"
@@ -588,9 +747,17 @@ export default function RewardsPage() {
                     </Button>
                     <Button
                       className="flex-1"
-                      onClick={() => handleRedeemReward(reward.id, reward.points)}
+                      onClick={() => handleRedeemReward(reward)}
+                      disabled={redeeming}
                     >
-                      Iskoristi
+                      {redeeming ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Obrađujem...
+                        </>
+                      ) : (
+                        'Iskoristi'
+                      )}
                     </Button>
                   </div>
                 </>

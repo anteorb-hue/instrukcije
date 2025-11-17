@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, UserPlus, BookOpen } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Mail, Lock, User, UserPlus, BookOpen, Gift } from 'lucide-react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -18,7 +19,16 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     role: 'STUDENT',
+    referralCode: '',
   })
+
+  // Check for referral code in URL params
+  useEffect(() => {
+    const refCode = searchParams.get('ref')
+    if (refCode) {
+      setFormData((prev) => ({ ...prev, referralCode: refCode }))
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +54,7 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          referralCode: formData.referralCode || undefined,
         }),
       })
 
@@ -152,6 +163,24 @@ export default function RegisterPage() {
                   </div>
                 </button>
               </div>
+            </div>
+
+            <div>
+              <Input
+                type="text"
+                label="Referral kod (opcionalno)"
+                placeholder="XXXX-XXXX-XXXX"
+                value={formData.referralCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })
+                }
+                icon={<Gift className="w-5 h-5" />}
+              />
+              {formData.referralCode && (
+                <p className="text-xs text-green-600 mt-1">
+                  🎁 S referral kodom dobivate bonus bodove pri registraciji!
+                </p>
+              )}
             </div>
 
             <div className="flex items-start space-x-2">

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rewardReview } from '@/lib/rewards'
 
 export async function POST(req: Request) {
   try {
@@ -79,6 +80,15 @@ export async function POST(req: Request) {
         data: JSON.stringify({ reviewId: review.id }),
       },
     })
+
+    // Award points for review
+    try {
+      await rewardReview(review.id)
+      console.log('Points awarded for review:', review.id)
+    } catch (error) {
+      console.error('Error awarding points for review:', error)
+      // Don't fail the request if points awarding fails
+    }
 
     return NextResponse.json(review, { status: 201 })
   } catch (error) {

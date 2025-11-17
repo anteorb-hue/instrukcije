@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rewardLessonCompletion, applyPenalty } from '@/lib/rewards'
 
 export async function GET(
   req: Request,
@@ -122,6 +123,17 @@ export async function PUT(
       },
     })
 
+    // Award points if lesson completed
+    if (status === 'COMPLETED' && existingBooking.status !== 'COMPLETED') {
+      try {
+        await rewardLessonCompletion(params.id)
+        console.log('Points awarded for completed lesson:', params.id)
+      } catch (error) {
+        console.error('Error awarding points for completed lesson:', error)
+        // Don't fail the request if points awarding fails
+      }
+    }
+
     // Create notification if reschedule
     if (scheduledAt) {
       const recipientId = existingBooking.studentId === session.user.id
@@ -187,12 +199,21 @@ export async function DELETE(
 
     // Check if cancellation is allowed (e.g., at least 24h before)
     const hoursUntilSession = (booking.scheduledAt.getTime() - Date.now()) / (1000 * 60 * 60)
+    const isLateCancellation = hoursUntilSession < 24
 
-    if (hoursUntilSession < 24) {
-      return NextResponse.json(
-        { error: 'Otkazivanje je moguće najmanje 24h prije sesije' },
-        { status: 400 }
-      )
+    if (isLateCancellation) {
+      // Apply penalty for late cancellation but still allow it
+      try {
+        await applyPenalty(
+          session.user.id,
+          'LATE_CANCELLATION',
+          'Otkazivanje instrukcije manje od 24h prije termina',
+          { bookingId: params.id }
+        )
+        console.log('Late cancellation penalty applied to user:', session.user.id)
+      } catch (error) {
+        console.error('Error applying late cancellation penalty:', error)
+      }
     }
 
     // Update booking status to cancelled
