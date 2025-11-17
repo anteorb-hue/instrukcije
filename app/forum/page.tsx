@@ -64,8 +64,17 @@ export default function ForumPage() {
     { id: 'matematika', name: 'Matematika', icon: '📐', count: 234 },
     { id: 'fizika', name: 'Fizika', icon: '⚛️', count: 156 },
     { id: 'kemija', name: 'Kemija', icon: '🧪', count: 98 },
+    { id: 'biologija', name: 'Biologija', icon: '🧬', count: 87 },
     { id: 'engleski', name: 'Engleski jezik', icon: '🇬🇧', count: 189 },
+    { id: 'hrvatski', name: 'Hrvatski jezik', icon: '🇭🇷', count: 124 },
+    { id: 'njemacki', name: 'Njemački jezik', icon: '🇩🇪', count: 76 },
     { id: 'programiranje', name: 'Programiranje', icon: '💻', count: 312 },
+    { id: 'web-dev', name: 'Web Development', icon: '🌐', count: 145 },
+    { id: 'data-science', name: 'Data Science', icon: '📊', count: 93 },
+    { id: 'povijest', name: 'Povijest', icon: '🏛️', count: 65 },
+    { id: 'geografija', name: 'Geografija', icon: '🌍', count: 58 },
+    { id: 'ekonomija', name: 'Ekonomija', icon: '💼', count: 102 },
+    { id: 'psihologija', name: 'Psihologija', icon: '🧠', count: 89 },
     { id: 'ostalo', name: 'Ostalo', icon: '📚', count: 145 },
   ]
 

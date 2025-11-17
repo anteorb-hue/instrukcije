@@ -389,8 +389,8 @@ export default function TutorProfilePage() {
             <BookingCalendar
               availability={tutor.availability.map(a => ({
                 dayOfWeek: a.day,
-                startTime: a.slots[0]?.split('-')[0] || '09:00',
-                endTime: a.slots[0]?.split('-')[1] || '18:00',
+                startTime: a.slots?.[0]?.split('-')?.[0] || '09:00',
+                endTime: a.slots?.[0]?.split('-')?.[1] || '18:00',
               }))}
               bookedSlots={[]}
               onSelectSlot={(date, time) => {

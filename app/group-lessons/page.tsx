@@ -53,6 +53,16 @@ export default function GroupLessonsPage() {
   const [selectedType, setSelectedType] = useState<string>('all')
   const router = useRouter()
 
+  // Mock trenutnog korisnika - u pravoj app-i bi došlo iz auth contexta
+  const currentUser = {
+    id: 'user-1',
+    role: 'STUDENT' as 'ADMIN' | 'TUTOR' | 'STUDENT' | 'PARENT',
+    name: 'Marko Marić',
+  }
+
+  // Samo instruktori mogu kreirati grupne lekcije
+  const canCreateGroupLesson = currentUser.role === 'TUTOR' || currentUser.role === 'ADMIN'
+
   const groupLessons: GroupLesson[] = [
     {
       id: '1',
@@ -230,13 +240,15 @@ export default function GroupLessonsPage() {
                 icon={<Search className="w-5 h-5" />}
               />
             </div>
-            <Button
-              variant="primary"
-              icon={<Plus className="w-5 h-5" />}
-              onClick={() => router.push('/group-lessons/create')}
-            >
-              Kreiraj grupnu lekciju
-            </Button>
+            {canCreateGroupLesson && (
+              <Button
+                variant="primary"
+                icon={<Plus className="w-5 h-5" />}
+                onClick={() => router.push('/group-lessons/create')}
+              >
+                Kreiraj grupnu lekciju
+              </Button>
+            )}
           </div>
 
           <div className="grid md:grid-cols-4 gap-4">
@@ -388,14 +400,18 @@ export default function GroupLessonsPage() {
                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-xl text-gray-600 mb-2">Nema dostupnih lekcija</p>
                 <p className="text-sm text-gray-500 mb-6">
-                  Pokušajte promijeniti filtere ili kreirajte novu grupnu lekciju
+                  {canCreateGroupLesson
+                    ? 'Pokušajte promijeniti filtere ili kreirajte novu grupnu lekciju'
+                    : 'Pokušajte promijeniti filtere ili provjerite kasnije'}
                 </p>
-                <Button
-                  variant="primary"
-                  onClick={() => router.push('/group-lessons/create')}
-                >
-                  Kreiraj grupnu lekciju
-                </Button>
+                {canCreateGroupLesson && (
+                  <Button
+                    variant="primary"
+                    onClick={() => router.push('/group-lessons/create')}
+                  >
+                    Kreiraj grupnu lekciju
+                  </Button>
+                )}
               </Card>
             </div>
           )}
