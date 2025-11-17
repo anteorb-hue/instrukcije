@@ -26,6 +26,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  Star,
+  TrendingUp,
+  DollarSign,
+  AlertTriangle,
 } from 'lucide-react'
 
 // Types
@@ -38,6 +42,7 @@ interface User {
   status: 'ACTIVE' | 'SUSPENDED' | 'BANNED' | 'PENDING'
   verified: boolean
   emailVerified: boolean
+  featured: boolean // NEW: Istaknut na platformi
   registeredAt: Date
   lastLogin?: Date
   totalLessons: number
@@ -55,10 +60,12 @@ export default function AdminUsersPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [showActionMenu, setShowActionMenu] = useState<string | null>(null)
   const usersPerPage = 10
 
   // Mock data - u produkciji dohvaćaj s API-ja
-  const allUsers: User[] = [
+  const [allUsers, setAllUsers] = useState<User[]>([
     {
       id: '1',
       name: 'Ana Horvat',
@@ -68,6 +75,7 @@ export default function AdminUsersPage() {
       status: 'ACTIVE',
       verified: true,
       emailVerified: true,
+      featured: true,
       registeredAt: new Date('2024-01-15'),
       lastLogin: new Date('2025-01-10'),
       totalLessons: 248,
@@ -84,6 +92,7 @@ export default function AdminUsersPage() {
       status: 'ACTIVE',
       verified: true,
       emailVerified: true,
+      featured: false,
       registeredAt: new Date('2024-02-20'),
       lastLogin: new Date('2025-01-11'),
       totalLessons: 32,
@@ -99,6 +108,7 @@ export default function AdminUsersPage() {
       status: 'ACTIVE',
       verified: true,
       emailVerified: true,
+      featured: true,
       registeredAt: new Date('2024-03-10'),
       lastLogin: new Date('2025-01-12'),
       totalLessons: 156,
@@ -114,6 +124,7 @@ export default function AdminUsersPage() {
       status: 'SUSPENDED',
       verified: false,
       emailVerified: true,
+      featured: false,
       registeredAt: new Date('2024-04-05'),
       lastLogin: new Date('2024-12-28'),
       totalLessons: 8,
@@ -129,6 +140,7 @@ export default function AdminUsersPage() {
       status: 'ACTIVE',
       verified: true,
       emailVerified: true,
+      featured: false,
       registeredAt: new Date('2024-05-12'),
       lastLogin: new Date('2025-01-09'),
       totalLessons: 45,
@@ -143,6 +155,7 @@ export default function AdminUsersPage() {
       status: 'PENDING',
       verified: false,
       emailVerified: true,
+      featured: false,
       registeredAt: new Date('2025-01-08'),
       totalLessons: 0,
       profileComplete: 75,
@@ -156,6 +169,7 @@ export default function AdminUsersPage() {
       status: 'ACTIVE',
       verified: true,
       emailVerified: true,
+      featured: false,
       registeredAt: new Date('2023-11-01'),
       lastLogin: new Date('2025-01-12'),
       totalLessons: 0,
@@ -169,13 +183,35 @@ export default function AdminUsersPage() {
       status: 'BANNED',
       verified: false,
       emailVerified: false,
+      featured: false,
       registeredAt: new Date('2024-06-15'),
       lastLogin: new Date('2024-11-20'),
       totalLessons: 3,
       totalSpent: 120,
       profileComplete: 40,
     },
-  ]
+  ])
+
+  // Action Handlers
+  const handleDeleteUser = (userId: string) => {
+    setAllUsers(prev => prev.filter(u => u.id !== userId))
+    setShowDeleteConfirm(null)
+    setSelectedUser(null)
+  }
+
+  const handleToggleFeatured = (userId: string) => {
+    setAllUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, featured: !u.featured } : u))
+    )
+  }
+
+  const handleToggleStatus = (userId: string, newStatus: User['status']) => {
+    setAllUsers(prev => prev.map(u => (u.id === userId ? { ...u, status: newStatus } : u)))
+  }
+
+  const handleVerifyUser = (userId: string) => {
+    setAllUsers(prev => prev.map(u => (u.id === userId ? { ...u, verified: true } : u)))
+  }
 
   // Filter users
   const filteredUsers = allUsers.filter(user => {
@@ -204,6 +240,8 @@ export default function AdminUsersPage() {
     pending: allUsers.filter(u => u.status === 'PENDING').length,
     tutors: allUsers.filter(u => u.role === 'TUTOR').length,
     students: allUsers.filter(u => u.role === 'STUDENT').length,
+    featured: allUsers.filter(u => u.featured).length,
+    totalEarnings: allUsers.reduce((sum, u) => sum + (u.totalEarned || 0), 0),
   }
 
   const getRoleColor = (role: string) => {
@@ -234,6 +272,14 @@ export default function AdminUsersPage() {
     }).format(date)
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('hr-HR', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
   const toggleUserSelection = (userId: string) => {
     setSelectedUsers(prev =>
       prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
@@ -249,8 +295,17 @@ export default function AdminUsersPage() {
   }
 
   const handleBulkAction = (action: string) => {
-    console.log(`Bulk action: ${action} for users:`, selectedUsers)
-    // Implement bulk actions
+    if (action === 'verify') {
+      selectedUsers.forEach(id => handleVerifyUser(id))
+    } else if (action === 'suspend') {
+      selectedUsers.forEach(id => handleToggleStatus(id, 'SUSPENDED'))
+    } else if (action === 'activate') {
+      selectedUsers.forEach(id => handleToggleStatus(id, 'ACTIVE'))
+    } else if (action === 'delete') {
+      if (confirm(`Jeste li sigurni da želite obrisati ${selectedUsers.length} korisnika?`)) {
+        selectedUsers.forEach(id => handleDeleteUser(id))
+      }
+    }
     setSelectedUsers([])
   }
 
@@ -262,9 +317,9 @@ export default function AdminUsersPage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Superadmin Panel</h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  Upravljaj svim korisnicima platforme
+                  Potpuna kontrola nad svim korisnicima i instruktorima
                 </p>
               </div>
 
@@ -336,76 +391,100 @@ export default function AdminUsersPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 text-blue-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-600">Ukupno</p>
-              </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-600">Ukupno</p>
             </div>
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="h-5 w-5 text-green-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <UserCheck className="h-4 w-4 text-green-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-xs text-gray-600">Aktivni</p>
-              </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+              <p className="text-xs text-gray-600">Aktivni</p>
             </div>
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Ban className="h-5 w-5 text-yellow-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Ban className="h-4 w-4 text-yellow-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.suspended}</p>
-                <p className="text-xs text-gray-600">Suspendirani</p>
-              </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.suspended}</p>
+              <p className="text-xs text-gray-600">Suspendirani</p>
             </div>
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Clock className="h-5 w-5 text-gray-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-gray-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                <p className="text-xs text-gray-600">Pending</p>
-              </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+              <p className="text-xs text-gray-600">Pending</p>
             </div>
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.tutors}</p>
-                <p className="text-xs text-gray-600">Instruktori</p>
-              </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.tutors}</p>
+              <p className="text-xs text-gray-600">Instruktori</p>
             </div>
           </Card>
 
           <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-green-600" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-4 w-4 text-green-600" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.students}</p>
-                <p className="text-xs text-gray-600">Učenici</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.students}</p>
+              <p className="text-xs text-gray-600">Učenici</p>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Star className="h-4 w-4 text-yellow-600" />
+                </div>
               </div>
+              <p className="text-2xl font-bold text-gray-900">{stats.featured}</p>
+              <p className="text-xs text-gray-600">Istaknuti</p>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                </div>
+              </div>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.totalEarnings)}</p>
+              <p className="text-xs text-gray-600">Tot. zarada</p>
             </div>
           </Card>
         </div>
@@ -422,13 +501,21 @@ export default function AdminUsersPage() {
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Verificiraj
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => handleBulkAction('activate')}>
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  Aktiviraj
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkAction('suspend')}>
                   <Ban className="h-4 w-4 mr-1" />
                   Suspendiraj
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => handleBulkAction('email')}>
                   <Mail className="h-4 w-4 mr-1" />
-                  Pošalji email
+                  Email
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleBulkAction('delete')}>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Obriši
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setSelectedUsers([])}>
                   Otkaži
@@ -495,7 +582,10 @@ export default function AdminUsersPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-gray-900">{user.name}</p>
                             {user.verified && (
-                              <CheckCircle className="h-4 w-4 text-blue-600" />
+                              <CheckCircle className="h-4 w-4 text-blue-600" title="Verificiran" />
+                            )}
+                            {user.featured && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" title="Istaknut" />
                             )}
                           </div>
                           <p className="text-sm text-gray-600">{user.email}</p>
@@ -522,15 +612,15 @@ export default function AdminUsersPage() {
                       <div className="text-sm">
                         <p className="font-medium text-gray-900">{user.totalLessons} lekcija</p>
                         {user.role === 'TUTOR' && user.totalEarned && (
-                          <p className="text-gray-600">{user.totalEarned} EUR</p>
+                          <p className="text-green-600 font-semibold">{formatCurrency(user.totalEarned)}</p>
                         )}
                         {(user.role === 'STUDENT' || user.role === 'PARENT') && user.totalSpent && (
-                          <p className="text-gray-600">{user.totalSpent} EUR</p>
+                          <p className="text-gray-600">{formatCurrency(user.totalSpent)}</p>
                         )}
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-2 relative">
                         <button
                           onClick={() => setSelectedUser(user)}
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -539,17 +629,87 @@ export default function AdminUsersPage() {
                           <Eye className="h-4 w-4 text-gray-600" />
                         </button>
                         <button
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Uredi"
-                        >
-                          <Edit className="h-4 w-4 text-gray-600" />
-                        </button>
-                        <button
+                          onClick={() => setShowActionMenu(showActionMenu === user.id ? null : user.id)}
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Više opcija"
                         >
                           <MoreVertical className="h-4 w-4 text-gray-600" />
                         </button>
+
+                        {/* Action Menu Dropdown */}
+                        {showActionMenu === user.id && (
+                          <div className="absolute right-0 top-12 z-20 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[200px]">
+                            <button
+                              onClick={() => {
+                                handleToggleFeatured(user.id)
+                                setShowActionMenu(null)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Star className="h-4 w-4" />
+                              {user.featured ? 'Ukloni istaknutog' : 'Označi kao istaknut'}
+                            </button>
+                            {!user.verified && (
+                              <button
+                                onClick={() => {
+                                  handleVerifyUser(user.id)
+                                  setShowActionMenu(null)
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Verificiraj
+                              </button>
+                            )}
+                            {user.status === 'ACTIVE' && (
+                              <button
+                                onClick={() => {
+                                  handleToggleStatus(user.id, 'SUSPENDED')
+                                  setShowActionMenu(null)
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-yellow-600"
+                              >
+                                <Ban className="h-4 w-4" />
+                                Suspendiraj
+                              </button>
+                            )}
+                            {user.status === 'ACTIVE' && (
+                              <button
+                                onClick={() => {
+                                  handleToggleStatus(user.id, 'BANNED')
+                                  setShowActionMenu(null)
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                              >
+                                <UserX className="h-4 w-4" />
+                                Bannaj
+                              </button>
+                            )}
+                            {(user.status === 'SUSPENDED' || user.status === 'BANNED') && (
+                              <button
+                                onClick={() => {
+                                  handleToggleStatus(user.id, 'ACTIVE')
+                                  setShowActionMenu(null)
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-green-600"
+                              >
+                                <UserCheck className="h-4 w-4" />
+                                Aktiviraj
+                              </button>
+                            )}
+                            <div className="border-t border-gray-200 my-1"></div>
+                            <button
+                              onClick={() => {
+                                setShowDeleteConfirm(user.id)
+                                setShowActionMenu(null)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Obriši korisnika
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -576,16 +736,19 @@ export default function AdminUsersPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
-                {[...Array(totalPages)].map((_, i) => (
-                  <Button
-                    key={i}
-                    variant={currentPage === i + 1 ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCurrentPage(i + 1)}
-                  >
-                    {i + 1}
-                  </Button>
-                ))}
+                {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                  const pageNum = i + 1
+                  return (
+                    <Button
+                      key={i}
+                      variant={currentPage === pageNum ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                })}
 
                 <Button
                   variant="outline"
@@ -601,7 +764,42 @@ export default function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* User Details Modal - TODO: Extract to separate component */}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="max-w-md w-full p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Potvrdi brisanje</h3>
+                <p className="text-sm text-gray-600">Ova akcija se ne može poništiti</p>
+              </div>
+            </div>
+            <p className="text-gray-700 mb-6">
+              Jeste li sigurni da želite trajno obrisati ovog korisnika? Svi podaci će biti izgubljeni.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                Otkaži
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                onClick={() => handleDeleteUser(showDeleteConfirm)}
+              >
+                Obriši
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* User Details Modal */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
@@ -637,6 +835,12 @@ export default function AdminUsersPage() {
                         Verificiran
                       </Badge>
                     )}
+                    {selectedUser.featured && (
+                      <Badge className="bg-yellow-100 text-yellow-800">
+                        <Star className="h-3 w-3 mr-1" />
+                        Istaknut
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -648,15 +852,15 @@ export default function AdminUsersPage() {
                   <p className="text-2xl font-bold text-gray-900">{selectedUser.totalLessons}</p>
                 </div>
                 {selectedUser.totalEarned && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-gray-600">Ukupna zarada</p>
-                    <p className="text-2xl font-bold text-gray-900">{selectedUser.totalEarned} EUR</p>
+                    <p className="text-2xl font-bold text-green-700">{formatCurrency(selectedUser.totalEarned)}</p>
                   </div>
                 )}
                 {selectedUser.totalSpent && (
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-600">Ukupna potrošnja</p>
-                    <p className="text-2xl font-bold text-gray-900">{selectedUser.totalSpent} EUR</p>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(selectedUser.totalSpent)}</p>
                   </div>
                 )}
                 <div className="p-4 bg-gray-50 rounded-lg">
@@ -674,7 +878,7 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button className="flex-1">
                   <Mail className="h-4 w-4 mr-2" />
                   Pošalji email
@@ -683,21 +887,56 @@ export default function AdminUsersPage() {
                   <Edit className="h-4 w-4 mr-2" />
                   Uredi
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleToggleFeatured(selectedUser.id)
+                    setSelectedUser(prev => prev ? { ...prev, featured: !prev.featured } : null)
+                  }}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  {selectedUser.featured ? 'Ukloni istaknutog' : 'Označi istaknut'}
+                </Button>
                 {selectedUser.status === 'ACTIVE' ? (
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" onClick={() => {
+                    handleToggleStatus(selectedUser.id, 'SUSPENDED')
+                    setSelectedUser(prev => prev ? { ...prev, status: 'SUSPENDED' } : null)
+                  }}>
                     <Ban className="h-4 w-4 mr-2" />
                     Suspendiraj
                   </Button>
                 ) : (
-                  <Button variant="outline" className="flex-1">
+                  <Button variant="outline" onClick={() => {
+                    handleToggleStatus(selectedUser.id, 'ACTIVE')
+                    setSelectedUser(prev => prev ? { ...prev, status: 'ACTIVE' } : null)
+                  }}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Aktiviraj
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  onClick={() => {
+                    setShowDeleteConfirm(selectedUser.id)
+                    setSelectedUser(null)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Obriši
+                </Button>
               </div>
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Click outside to close action menu */}
+      {showActionMenu && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setShowActionMenu(null)}
+        />
       )}
     </div>
   )
