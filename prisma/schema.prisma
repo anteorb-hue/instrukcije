@@ -70,6 +70,7 @@ model User {
   payments          Payment[]
   notifications     Notification[]
   favorites         Favorite[]
+  userPoints        UserPoints?
 
   @@map("users")
 }
@@ -316,4 +317,129 @@ model Favorite {
 
   @@unique([userId, tutorId])
   @@map("favorites")
+}
+
+// Rewards & Points System
+
+enum UserTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  ELITE
+}
+
+enum PointTransactionType {
+  EARNED
+  SPENT
+  PENALTY
+  BONUS
+  REFUND
+}
+
+enum RewardType {
+  DISCOUNT
+  VOUCHER
+  FEATURED
+  FREE_LESSON
+  PREMIUM
+  COMMISSION_DISCOUNT
+}
+
+model UserPoints {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalPoints     Int      @default(0)
+  currentTier     UserTier @default(BRONZE)
+
+  // Referral system
+  referralCode    String   @unique
+  referredBy      String?
+  totalReferrals  Int      @default(0)
+
+  // Relations
+  transactions    PointTransaction[]
+  rewards         UserReward[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("user_points")
+}
+
+model PointTransaction {
+  id              String                @id @default(cuid())
+
+  userPointsId    String
+  userPoints      UserPoints            @relation(fields: [userPointsId], references: [id], onDelete: Cascade)
+
+  points          Int
+  type            PointTransactionType
+  reason          String
+  description     String?
+
+  // Optional relations
+  bookingId       String?
+  reviewId        String?
+
+  metadata        String?  @db.Text // JSON data for additional info
+
+  createdAt       DateTime @default(now())
+
+  @@map("point_transactions")
+  @@index([userPointsId])
+  @@index([createdAt])
+}
+
+model UserReward {
+  id              String      @id @default(cuid())
+
+  userPointsId    String
+  userPoints      UserPoints  @relation(fields: [userPointsId], references: [id], onDelete: Cascade)
+
+  type            RewardType
+  title           String
+  description     String?
+  value           Float       // Numeric value (EUR, percentage, days, etc.)
+  pointsCost      Int
+
+  used            Boolean     @default(false)
+  usedAt          DateTime?
+  expiresAt       DateTime?
+
+  metadata        String?     @db.Text // JSON data for additional info
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("user_rewards")
+  @@index([userPointsId])
+  @@index([used])
+}
+
+model RewardCatalog {
+  id              String     @id @default(cuid())
+
+  type            RewardType
+  title           String
+  description     String     @db.Text
+  pointsCost      Int
+  value           Float
+
+  active          Boolean    @default(true)
+  limitPerUser    Int?       // Max times user can redeem this
+  validDays       Int?       // How many days reward is valid after redemption
+
+  icon            String?
+  imageUrl        String?
+
+  metadata        String?    @db.Text // JSON for additional config
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@map("reward_catalog")
+  @@index([active])
 }
