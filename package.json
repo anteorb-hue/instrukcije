@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "next": "^14.2.5",
@@ -48,6 +55,7 @@
     "postcss": "^8.4.41",
     "autoprefixer": "^10.4.20",
     "prisma": "^5.18.0",
+    "ts-node": "^10.9.2",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.5"
   }
