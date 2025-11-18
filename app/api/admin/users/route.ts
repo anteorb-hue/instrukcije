@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/users - List all users (Admin only)
-export async function GET(req: Request) {
+export const GET = withAdmin(async (req: NextRequest) => {
   try {
     const { searchParams } = new URL(req.url)
     const role = searchParams.get('role')
@@ -77,4 +78,4 @@ export async function GET(req: Request) {
       { status: 500 }
     )
   }
-}
+})

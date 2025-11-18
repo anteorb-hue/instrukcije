@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/rewards - List all rewards in catalog (Admin only)
-export async function GET(req: Request) {
+export const GET = withAdmin(async (req: NextRequest) => {
   try {
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type')
@@ -30,10 +31,10 @@ export async function GET(req: Request) {
       { status: 500 }
     )
   }
-}
+})
 
 // POST /api/admin/rewards - Create new reward (Admin only)
-export async function POST(req: Request) {
+export const POST = withAdmin(async (req: NextRequest) => {
   try {
     const body = await req.json()
     const {
@@ -83,4 +84,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-}
+})

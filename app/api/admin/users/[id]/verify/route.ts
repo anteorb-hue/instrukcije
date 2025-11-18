@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // POST /api/admin/users/[id]/verify - Verify tutor (Admin only)
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export const POST = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const body = await req.json()
     const { verified } = body
@@ -84,4 +85,4 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       { status: 500 }
     )
   }
-}
+})

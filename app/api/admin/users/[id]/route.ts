@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/users/[id] - Get single user (Admin only)
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: params.id },
@@ -91,10 +92,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       { status: 500 }
     )
   }
-}
+})
 
 // PUT /api/admin/users/[id] - Update user (Admin only)
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export const PUT = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const body = await req.json()
     const { role, name, email, phone, bio, avatar } = body
@@ -119,10 +120,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       { status: 500 }
     )
   }
-}
+})
 
 // DELETE /api/admin/users/[id] - Delete user (Admin only)
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export const DELETE = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     // Check if user exists
     const user = await prisma.user.findUnique({
@@ -161,4 +162,4 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       { status: 500 }
     )
   }
-}
+})

@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/analytics/overview - Platform overview statistics (Admin only)
-export async function GET(req: Request) {
+export const GET = withAdmin(async (req: NextRequest) => {
   try {
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || '30' // days
@@ -179,4 +180,4 @@ export async function GET(req: Request) {
       { status: 500 }
     )
   }
-}
+})

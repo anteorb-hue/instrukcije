@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/rewards/[id] - Get single reward (Admin only)
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export const GET = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const reward = await prisma.rewardCatalog.findUnique({
       where: { id: params.id },
@@ -20,10 +21,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       { status: 500 }
     )
   }
-}
+})
 
 // PUT /api/admin/rewards/[id] - Update reward (Admin only)
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export const PUT = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const body = await req.json()
     const {
@@ -67,10 +68,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       { status: 500 }
     )
   }
-}
+})
 
 // DELETE /api/admin/rewards/[id] - Delete reward (Admin only)
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export const DELETE = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     await prisma.rewardCatalog.delete({
       where: { id: params.id },
@@ -84,4 +85,4 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       { status: 500 }
     )
   }
-}
+})
