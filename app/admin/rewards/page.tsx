@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import useSWR from 'swr'
+import toast from 'react-hot-toast'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -48,9 +50,9 @@ const REWARD_TYPES = [
 
 const ICON_OPTIONS = ['Gift', 'Star', 'Award', 'Crown', 'Percent', 'DollarSign']
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
 export default function AdminRewardsPage() {
-  const [rewards, setRewards] = useState<Reward[]>([])
-  const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState<Partial<Reward>>({
@@ -64,25 +66,12 @@ export default function AdminRewardsPage() {
     validDays: 30,
     icon: 'Gift',
   })
+  const [editedRewards, setEditedRewards] = useState<Record<string, Partial<Reward>>>({})
 
-  useEffect(() => {
-    fetchRewards()
-  }, [])
+  // Fetch rewards from API
+  const { data, error, isLoading, mutate } = useSWR('/api/admin/rewards', fetcher)
 
-  const fetchRewards = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/admin/rewards')
-      if (response.ok) {
-        const data = await response.json()
-        setRewards(data)
-      }
-    } catch (error) {
-      console.error('Error fetching rewards:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const rewards: Reward[] = data?.rewards || []
 
   const handleAdd = async () => {
     try {
@@ -93,42 +82,47 @@ export default function AdminRewardsPage() {
       })
 
       if (response.ok) {
-        await fetchRewards()
+        await mutate()
         setShowAddForm(false)
         resetForm()
-        alert('Nagrada uspješno dodana!')
+        toast.success('Nagrada uspješno dodana!')
       } else {
-        const error = await response.json()
-        alert(error.error || 'Greška pri dodavanju nagrade')
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Greška pri dodavanju nagrade')
       }
     } catch (error) {
       console.error('Error adding reward:', error)
-      alert('Greška pri dodavanju nagrade')
+      toast.error('Greška pri dodavanju nagrade')
     }
   }
 
   const handleUpdate = async (id: string) => {
     try {
-      const reward = rewards.find((r) => r.id === id)
-      if (!reward) return
+      const updatedReward = editedRewards[id]
+      if (!updatedReward) return
 
       const response = await fetch(`/api/admin/rewards/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reward),
+        body: JSON.stringify(updatedReward),
       })
 
       if (response.ok) {
-        await fetchRewards()
+        await mutate()
         setEditingId(null)
-        alert('Nagrada uspješno ažurirana!')
+        setEditedRewards((prev) => {
+          const newState = { ...prev }
+          delete newState[id]
+          return newState
+        })
+        toast.success('Nagrada uspješno ažurirana!')
       } else {
-        const error = await response.json()
-        alert(error.error || 'Greška pri ažuriranju nagrade')
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Greška pri ažuriranju nagrade')
       }
     } catch (error) {
       console.error('Error updating reward:', error)
-      alert('Greška pri ažuriranju nagrade')
+      toast.error('Greška pri ažuriranju nagrade')
     }
   }
 
@@ -141,15 +135,15 @@ export default function AdminRewardsPage() {
       })
 
       if (response.ok) {
-        await fetchRewards()
-        alert('Nagrada uspješno obrisana!')
+        await mutate()
+        toast.success('Nagrada uspješno obrisana!')
       } else {
-        const error = await response.json()
-        alert(error.error || 'Greška pri brisanju nagrade')
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Greška pri brisanju nagrade')
       }
     } catch (error) {
       console.error('Error deleting reward:', error)
-      alert('Greška pri brisanju nagrade')
+      toast.error('Greška pri brisanju nagrade')
     }
   }
 
@@ -162,10 +156,15 @@ export default function AdminRewardsPage() {
       })
 
       if (response.ok) {
-        await fetchRewards()
+        await mutate()
+        toast.success(`Nagrada ${!active ? 'aktivirana' : 'deaktivirana'}!`)
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Greška pri promjeni statusa')
       }
     } catch (error) {
       console.error('Error toggling active:', error)
+      toast.error('Greška pri promjeni statusa')
     }
   }
 
@@ -184,9 +183,17 @@ export default function AdminRewardsPage() {
   }
 
   const updateReward = (id: string, field: string, value: any) => {
-    setRewards((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    )
+    setEditedRewards((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] || rewards.find((r) => r.id === id)),
+        [field]: value,
+      },
+    }))
+  }
+
+  const getEditedReward = (reward: Reward) => {
+    return editedRewards[reward.id] || reward
   }
 
   const getRoleLabel = (role: string | null) => {
@@ -201,10 +208,20 @@ export default function AdminRewardsPage() {
     return 'bg-gray-100 text-gray-800'
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="text-red-600 text-lg font-semibold mb-2">Greška pri učitavanju nagrada</div>
+        <p className="text-gray-600 mb-4">Molimo pokušajte ponovno</p>
+        <Button onClick={() => mutate()}>Pokušaj ponovno</Button>
       </div>
     )
   }
@@ -405,6 +422,7 @@ export default function AdminRewardsPage() {
       <div className="space-y-4">
         {rewards.map((reward) => {
           const isEditing = editingId === reward.id
+          const displayReward = isEditing ? getEditedReward(reward) : reward
 
           return (
             <Card key={reward.id} className={`p-6 ${!reward.active && 'opacity-60'}`}>
@@ -415,14 +433,14 @@ export default function AdminRewardsPage() {
                       <input
                         type="text"
                         className="border rounded px-3 py-2"
-                        value={reward.title}
+                        value={displayReward.title}
                         onChange={(e) => updateReward(reward.id, 'title', e.target.value)}
                         placeholder="Naziv"
                       />
                       <input
                         type="number"
                         className="border rounded px-3 py-2"
-                        value={reward.pointsCost}
+                        value={displayReward.pointsCost}
                         onChange={(e) =>
                           updateReward(reward.id, 'pointsCost', parseInt(e.target.value))
                         }
@@ -432,7 +450,7 @@ export default function AdminRewardsPage() {
                         type="number"
                         step="0.01"
                         className="border rounded px-3 py-2"
-                        value={reward.value}
+                        value={displayReward.value}
                         onChange={(e) =>
                           updateReward(reward.id, 'value', parseFloat(e.target.value))
                         }
@@ -441,7 +459,7 @@ export default function AdminRewardsPage() {
                       <textarea
                         className="border rounded px-3 py-2 md:col-span-3"
                         rows={2}
-                        value={reward.description}
+                        value={displayReward.description}
                         onChange={(e) =>
                           updateReward(reward.id, 'description', e.target.value)
                         }
@@ -489,7 +507,14 @@ export default function AdminRewardsPage() {
                         <Save className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => setEditingId(null)}
+                        onClick={() => {
+                          setEditingId(null)
+                          setEditedRewards((prev) => {
+                            const newState = { ...prev }
+                            delete newState[reward.id]
+                            return newState
+                          })
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
                         title="Odustani"
                       >
