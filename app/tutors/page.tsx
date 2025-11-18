@@ -27,6 +27,7 @@ export default function TutorsPage() {
       if (filters.priceMin) params.append('priceMin', filters.priceMin.toString())
       if (filters.priceMax) params.append('priceMax', filters.priceMax.toString())
       if (filters.rating) params.append('rating', filters.rating.toString())
+      if (filters.tier) params.append('tier', filters.tier)
 
       const response = await fetch(`/api/tutors?${params.toString()}`)
 
@@ -50,6 +51,7 @@ export default function TutorsPage() {
         availableOnline: true, // Could add this field to DB if needed
         availableInPerson: true, // Could add this field to DB if needed
         responseTime: 20, // Could calculate from messages if needed
+        tier: tutor.userPoints?.currentTier || null,
       }))
 
       setTutors(transformedTutors)

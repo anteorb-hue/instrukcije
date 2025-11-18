@@ -11,6 +11,7 @@ export async function GET(req: Request) {
     const priceMin = searchParams.get('priceMin') ? parseFloat(searchParams.get('priceMin')!) : undefined
     const priceMax = searchParams.get('priceMax') ? parseFloat(searchParams.get('priceMax')!) : undefined
     const rating = searchParams.get('rating') ? parseFloat(searchParams.get('rating')!) : undefined
+    const tier = searchParams.get('tier') || ''
 
     const tutors = await prisma.user.findMany({
       where: {
@@ -34,6 +35,11 @@ export async function GET(req: Request) {
             },
           } : {}),
         },
+        ...(tier ? {
+          userPoints: {
+            currentTier: tier as any,
+          },
+        } : {}),
         ...(query ? {
           OR: [
             { name: { contains: query, mode: 'insensitive' } },
@@ -51,6 +57,7 @@ export async function GET(req: Request) {
             },
           },
         },
+        userPoints: true,
       },
       orderBy: {
         tutorProfile: {

@@ -20,6 +20,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     rating: '',
     availability: '',
     videoProvider: '',
+    tier: '',
   })
 
   const subjects = [
@@ -57,6 +58,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       rating: '',
       availability: '',
       videoProvider: '',
+      tier: '',
     }
     setFilters(resetFilters)
     onSearch(resetFilters)
@@ -201,6 +203,24 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                 <option value="ZOOM">Zoom</option>
                 <option value="GOOGLE_MEET">Google Meet</option>
                 <option value="MICROSOFT_TEAMS">Microsoft Teams</option>
+              </select>
+            </div>
+
+            {/* Tier */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tier instruktora
+              </label>
+              <select
+                className="input-field"
+                value={filters.tier}
+                onChange={(e) => setFilters({ ...filters, tier: e.target.value })}
+              >
+                <option value="">Svi tier-ovi</option>
+                <option value="SILVER">🥈 Silver</option>
+                <option value="GOLD">🥇 Gold</option>
+                <option value="PLATINUM">💎 Platinum</option>
+                <option value="ELITE">⭐ Elite</option>
               </select>
             </div>
 
