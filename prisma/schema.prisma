@@ -80,6 +80,11 @@ model User {
   childrenAsParent  ParentChild[] @relation("ParentChildren")
   parentLinks       ParentChild[] @relation("ChildParent")
 
+  // Learning Materials
+  materials         Material[]
+  materialViews     MaterialView[]
+  materialDownloads MaterialDownload[]
+
   @@map("users")
 }
 
@@ -190,6 +195,7 @@ model Subject {
 
   tutors      SubjectTaught[]
   bookings    Booking[]
+  materials   Material[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -496,4 +502,126 @@ model RewardCatalog {
   @@map("reward_catalog")
   @@index([active])
   @@index([userRole])
+}
+
+// Learning Materials System
+
+enum MaterialType {
+  VIDEO
+  PDF
+  DOCUMENT
+  PRESENTATION
+  IMAGE
+  AUDIO
+  ARCHIVE
+  OTHER
+}
+
+model Material {
+  id          String       @id @default(cuid())
+
+  // Owner
+  tutorId     String
+  tutor       User         @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  // Content
+  title       String
+  description String?      @db.Text
+  type        MaterialType
+  fileUrl     String       // URL to file (Cloudinary, S3, etc.)
+  fileName    String       // Original filename
+  fileSize    Int          // Size in bytes
+  mimeType    String       // e.g., "application/pdf", "video/mp4"
+
+  // Categorization
+  subjectId   String?
+  subject     Subject?     @relation(fields: [subjectId], references: [id])
+
+  educationLevel EducationLevel?
+
+  tags        MaterialTag[]
+
+  // Visibility & Access
+  isPublic    Boolean      @default(true)  // Public or private
+  isFree      Boolean      @default(true)  // Free or paid
+  price       Float?       // Price if paid
+
+  // Metadata
+  duration    Int?         // For videos/audio (in seconds)
+  pageCount   Int?         // For PDFs/documents
+
+  // Stats
+  viewCount   Int          @default(0)
+  downloadCount Int        @default(0)
+
+  // Tracking
+  views       MaterialView[]
+  downloads   MaterialDownload[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("materials")
+  @@index([tutorId])
+  @@index([subjectId])
+  @@index([type])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model MaterialTag {
+  id         String   @id @default(cuid())
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  tag        String
+
+  createdAt  DateTime @default(now())
+
+  @@unique([materialId, tag])
+  @@map("material_tags")
+  @@index([tag])
+}
+
+model MaterialView {
+  id         String   @id @default(cuid())
+
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  viewedAt   DateTime @default(now())
+
+  // Analytics
+  ipAddress  String?
+  userAgent  String?
+
+  @@map("material_views")
+  @@index([materialId])
+  @@index([userId])
+  @@index([viewedAt])
+}
+
+model MaterialDownload {
+  id           String   @id @default(cuid())
+
+  materialId   String
+  material     Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  downloadedAt DateTime @default(now())
+
+  // Analytics
+  ipAddress    String?
+  userAgent    String?
+
+  @@map("material_downloads")
+  @@index([materialId])
+  @@index([userId])
+  @@index([downloadedAt])
 }
