@@ -1,47 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
-/**
- * GET /api/admin/rewards
- * Get all rewards in catalog (admin only)
- */
-export async function GET() {
+// GET /api/admin/rewards - List all rewards in catalog (Admin only)
+export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const { searchParams } = new URL(req.url)
+    const type = searchParams.get('type')
+    const userRole = searchParams.get('userRole')
+    const active = searchParams.get('active')
 
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    const where: any = {
+      ...(type && { type: type as any }),
+      ...(userRole && { userRole: userRole as any }),
+      ...(active !== null && active !== undefined && { active: active === 'true' }),
     }
 
     const rewards = await prisma.rewardCatalog.findMany({
-      orderBy: [{ userRole: 'asc' }, { pointsCost: 'asc' }],
+      where,
+      orderBy: {
+        pointsCost: 'asc',
+      },
     })
 
-    return NextResponse.json(rewards)
-  } catch (error) {
+    return NextResponse.json({ rewards })
+  } catch (error: any) {
     console.error('Error fetching rewards:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch rewards' },
+      { error: error.message || 'Failed to fetch rewards' },
       { status: 500 }
     )
   }
 }
 
-/**
- * POST /api/admin/rewards
- * Create new reward in catalog (admin only)
- */
-export async function POST(request: NextRequest) {
+// POST /api/admin/rewards - Create new reward (Admin only)
+export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const body = await request.json()
+    const body = await req.json()
     const {
       type,
       title,
@@ -54,12 +48,12 @@ export async function POST(request: NextRequest) {
       validDays,
       icon,
       imageUrl,
+      metadata,
     } = body
 
-    // Validate required fields
-    if (!type || !title || !description || pointsCost === undefined || value === undefined) {
+    if (!type || !title || !description || !pointsCost || !value) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Type, title, description, pointsCost, and value are required' },
         { status: 400 }
       )
     }
@@ -71,20 +65,21 @@ export async function POST(request: NextRequest) {
         description,
         pointsCost,
         value,
-        userRole: userRole || null,
-        active: active !== undefined ? active : true,
+        userRole,
+        active: active ?? true,
         limitPerUser,
         validDays,
         icon,
         imageUrl,
+        metadata,
       },
     })
 
     return NextResponse.json(reward, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating reward:', error)
     return NextResponse.json(
-      { error: 'Failed to create reward' },
+      { error: error.message || 'Failed to create reward' },
       { status: 500 }
     )
   }
