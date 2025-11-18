@@ -13,6 +13,7 @@ enum UserRole {
   STUDENT
   TUTOR
   ADMIN
+  PARENT
 }
 
 enum SessionStatus {
@@ -62,6 +63,9 @@ model User {
   // Student specific fields
   studentProfile StudentProfile?
 
+  // Parent specific fields
+  parentProfile ParentProfile?
+
   // Relations
   sentMessages      Message[]     @relation("SentMessages")
   receivedMessages  Message[]     @relation("ReceivedMessages")
@@ -73,6 +77,8 @@ model User {
   notifications     Notification[]
   favorites         Favorite[]
   userPoints        UserPoints?
+  childrenAsParent  ParentChild[] @relation("ParentChildren")
+  parentLinks       ParentChild[] @relation("ChildParent")
 
   @@map("users")
 }
@@ -128,6 +134,44 @@ model StudentProfile {
   updatedAt         DateTime @updatedAt
 
   @@map("student_profiles")
+}
+
+model ParentProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional additional parent info
+  occupation        String?
+  emergencyContact  String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("parent_profiles")
+}
+
+model ParentChild {
+  id              String   @id @default(cuid())
+
+  parentId        String
+  parent          User     @relation("ParentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+
+  childId         String
+  child           User     @relation("ChildParent", fields: [childId], references: [id], onDelete: Cascade)
+
+  relationship    String?  // "Mother", "Father", "Guardian", etc.
+  isPrimary       Boolean  @default(false)  // Primary contact for this child
+  canBook         Boolean  @default(true)   // Can book sessions for child
+  canViewProgress Boolean  @default(true)   // Can view child's progress
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([parentId, childId])
+  @@map("parent_children")
+  @@index([parentId])
+  @@index([childId])
 }
 
 model Subject {

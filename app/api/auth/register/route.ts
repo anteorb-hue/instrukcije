@@ -50,7 +50,14 @@ export async function POST(req: Request) {
           experience: 0,
         },
       })
+    } else if (role === 'PARENT') {
+      await prisma.parentProfile.create({
+        data: {
+          userId: user.id,
+        },
+      })
     } else {
+      // Default to STUDENT
       await prisma.studentProfile.create({
         data: {
           userId: user.id,

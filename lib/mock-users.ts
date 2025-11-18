@@ -42,6 +42,18 @@ export const mockUsers = [
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   },
+  {
+    id: 'parent-1',
+    email: 'parent@instrukcije.hr',
+    password: '$2a$10$XlngDfLOWCJLabZ1z6D9Zeex43VJvzsnpLbIrFuJHamrPOXGbjS3.',
+    name: 'Marija Novak',
+    role: 'PARENT' as const,
+    avatar: null,
+    phone: '+385 91 234 5681',
+    bio: 'Roditelj dvoje djece',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  },
 ]
 
 /**
@@ -57,5 +69,9 @@ export const mockUsers = [
  *
  * Student:
  * - Email: ucenik@instrukcije.hr
+ * - Password: password123
+ *
+ * Parent:
+ * - Email: parent@instrukcije.hr
  * - Password: password123
  */

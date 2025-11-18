@@ -53,11 +53,19 @@ export default function Navbar() {
                     Poruke
                   </Button>
                 </Link>
-                <Link href="/bookings">
-                  <Button variant="ghost" size="sm" icon={<Calendar className="w-5 h-5" />}>
-                    Termini
-                  </Button>
-                </Link>
+                {session.user.role === 'PARENT' ? (
+                  <Link href="/parent-portal">
+                    <Button variant="ghost" size="sm" icon={<User className="w-5 h-5" />}>
+                      Moja djeca
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/bookings">
+                    <Button variant="ghost" size="sm" icon={<Calendar className="w-5 h-5" />}>
+                      Termini
+                    </Button>
+                  </Link>
+                )}
                 <NotificationCenter />
                 <div className="relative">
                   <button
@@ -75,6 +83,15 @@ export default function Navbar() {
                         <User className="w-4 h-4" />
                         <span>Moj profil</span>
                       </Link>
+                      {session.user.role === 'PARENT' && (
+                        <Link
+                          href="/parent-portal"
+                          className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-50 transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>Moja djeca</span>
+                        </Link>
+                      )}
                       <Link
                         href="/certificates"
                         className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-50 transition-colors"

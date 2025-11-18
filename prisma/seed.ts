@@ -78,6 +78,109 @@ async function main() {
   })
   console.log('✓ Created student user:', student.email)
 
+  // Create Parent user with profile
+  const parent = await prisma.user.upsert({
+    where: { email: 'parent@instrukcije.hr' },
+    update: {},
+    create: {
+      email: 'parent@instrukcije.hr',
+      password: hashedPassword,
+      name: 'Marija Novak',
+      role: 'PARENT',
+      phone: '+385 91 234 5681',
+      bio: 'Roditelj dvoje djece koja pohađaju instrukcije',
+      parentProfile: {
+        create: {
+          occupation: 'Inženjer',
+          emergencyContact: '+385 91 987 6543',
+        },
+      },
+    },
+  })
+  console.log('✓ Created parent user:', parent.email)
+
+  // Create first child (student)
+  const child1 = await prisma.user.upsert({
+    where: { email: 'dijete1@instrukcije.hr' },
+    update: {},
+    create: {
+      email: 'dijete1@instrukcije.hr',
+      password: hashedPassword,
+      name: 'Luka Novak',
+      role: 'STUDENT',
+      phone: '+385 91 234 5682',
+      bio: 'Učenik 7. razreda osnovne škole',
+      studentProfile: {
+        create: {
+          educationLevel: 'OSNOVNA_SKOLA',
+          interests: ['Matematika', 'Programiranje'],
+          learningGoals: 'Poboljšati ocjenu iz matematike',
+        },
+      },
+    },
+  })
+  console.log('✓ Created child 1:', child1.email)
+
+  // Create second child (student)
+  const child2 = await prisma.user.upsert({
+    where: { email: 'dijete2@instrukcije.hr' },
+    update: {},
+    create: {
+      email: 'dijete2@instrukcije.hr',
+      password: hashedPassword,
+      name: 'Petra Novak',
+      role: 'STUDENT',
+      phone: '+385 91 234 5683',
+      bio: 'Učenica 3. razreda srednje škole',
+      studentProfile: {
+        create: {
+          educationLevel: 'SREDNJA_SKOLA',
+          interests: ['Fizika', 'Engleski jezik'],
+          learningGoals: 'Priprema za maturu iz fizike',
+        },
+      },
+    },
+  })
+  console.log('✓ Created child 2:', child2.email)
+
+  // Link children to parent
+  await prisma.parentChild.upsert({
+    where: {
+      parentId_childId: {
+        parentId: parent.id,
+        childId: child1.id,
+      },
+    },
+    update: {},
+    create: {
+      parentId: parent.id,
+      childId: child1.id,
+      relationship: 'Mother',
+      isPrimary: true,
+      canBook: true,
+      canViewProgress: true,
+    },
+  })
+
+  await prisma.parentChild.upsert({
+    where: {
+      parentId_childId: {
+        parentId: parent.id,
+        childId: child2.id,
+      },
+    },
+    update: {},
+    create: {
+      parentId: parent.id,
+      childId: child2.id,
+      relationship: 'Mother',
+      isPrimary: true,
+      canBook: true,
+      canViewProgress: true,
+    },
+  })
+  console.log('✓ Linked children to parent')
+
   // Create some subjects
   const subjects = await Promise.all([
     prisma.subject.upsert({
@@ -322,6 +425,9 @@ async function main() {
   console.log('Admin: admin@instrukcije.hr / password123')
   console.log('Tutor: instruktor@instrukcije.hr / password123')
   console.log('Student: ucenik@instrukcije.hr / password123')
+  console.log('Parent: parent@instrukcije.hr / password123')
+  console.log('Child 1: dijete1@instrukcije.hr / password123')
+  console.log('Child 2: dijete2@instrukcije.hr / password123')
 }
 
 main()

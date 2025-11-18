@@ -40,6 +40,12 @@ export default function DashboardPage() {
     return null
   }
 
+  // Redirect parents to their own portal
+  if (session.user.role === 'PARENT') {
+    router.push('/parent-portal')
+    return null
+  }
+
   const isTutor = session.user.role === 'TUTOR'
 
   // Mock data - u pravoj aplikaciji dohvatiti iz API-ja
