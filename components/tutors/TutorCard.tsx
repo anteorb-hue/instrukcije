@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { Star, MapPin, Clock, Video, Heart } from 'lucide-react'
 import Avatar from '@/components/ui/Avatar'
@@ -8,6 +8,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import { formatCurrency } from '@/lib/utils'
+import useSwipeGesture from '@/hooks/useSwipeGesture'
 
 interface TutorCardProps {
   tutor: {
@@ -28,6 +29,45 @@ interface TutorCardProps {
 }
 
 export default function TutorCard({ tutor }: TutorCardProps) {
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [showFavoriteAnimation, setShowFavoriteAnimation] = useState(false)
+
+  const handleFavoriteToggle = async () => {
+    const newFavoriteState = !isFavorite
+    setIsFavorite(newFavoriteState)
+    setShowFavoriteAnimation(true)
+    setTimeout(() => setShowFavoriteAnimation(false), 300)
+
+    try {
+      if (newFavoriteState) {
+        // Add to favorites
+        await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tutorId: tutor.id }),
+        })
+      } else {
+        // Remove from favorites
+        await fetch(`/api/favorites?tutorId=${tutor.id}`, {
+          method: 'DELETE',
+        })
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      // Revert on error
+      setIsFavorite(!newFavoriteState)
+    }
+  }
+
+  const { handlers, swipeOffset } = useSwipeGesture({
+    onSwipeRight: () => {
+      if (!isFavorite) {
+        handleFavoriteToggle()
+      }
+    },
+    threshold: 100,
+  })
+
   const getTierBadge = () => {
     if (!tutor.tier || tutor.tier === 'BRONZE') return null
 
@@ -49,8 +89,23 @@ export default function TutorCard({ tutor }: TutorCardProps) {
   }
 
   return (
-    <Card hover className="flex flex-col h-full">
-      <Link href={`/tutors/${tutor.id}`}>
+    <div
+      {...handlers}
+      className="relative"
+      style={{
+        transform: `translateX(${swipeOffset * 0.3}px)`,
+        transition: swipeOffset === 0 ? 'transform 0.3s ease-out' : 'none',
+      }}
+    >
+      {/* Swipe indicator */}
+      {swipeOffset > 50 && (
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-red-500 rounded-full p-3 shadow-lg animate-pulse">
+          <Heart className="w-6 h-6 text-white fill-current" />
+        </div>
+      )}
+
+      <Card hover className="flex flex-col h-full">
+        <Link href={`/tutors/${tutor.id}`}>
         <div className="flex items-start space-x-4 mb-4">
           <div className="relative">
             <Avatar src={tutor.avatar} name={tutor.name} size="lg" />
@@ -85,8 +140,21 @@ export default function TutorCard({ tutor }: TutorCardProps) {
             </div>
           </div>
 
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              handleFavoriteToggle()
+            }}
+            className={`p-2 hover:bg-gray-100 rounded-lg transition-all ${
+              showFavoriteAnimation ? 'scale-125' : 'scale-100'
+            } touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center`}
+            aria-label={isFavorite ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
+          >
+            <Heart
+              className={`w-5 h-5 transition-colors ${
+                isFavorite ? 'text-red-500 fill-current' : 'text-gray-400 hover:text-red-500'
+              }`}
+            />
           </button>
         </div>
       </Link>
@@ -137,5 +205,6 @@ export default function TutorCard({ tutor }: TutorCardProps) {
         </Link>
       </div>
     </Card>
+    </div>
   )
 }

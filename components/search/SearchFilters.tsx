@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Search, Filter, X } from 'lucide-react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import SearchAutocomplete from './SearchAutocomplete'
 
 interface SearchFiltersProps {
   onSearch: (filters: any) => void
@@ -63,7 +64,31 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSearch(filters)
+
+    // Convert availability to boolean flags
+    const searchFilters = {
+      ...filters,
+      ...(filters.availability === 'online' ? { availableOnline: true } : {}),
+      ...(filters.availability === 'in-person' ? { availableInPerson: true } : {}),
+    }
+
+    onSearch(searchFilters)
+  }
+
+  const handleAutocompleteSelect = (value: string, type?: string) => {
+    if (type === 'subject') {
+      setFilters({ ...filters, subject: value })
+    } else if (type === 'query') {
+      setFilters({ ...filters, query: value })
+    }
+    // Trigger search automatically
+    const searchFilters = {
+      ...filters,
+      ...(type === 'subject' ? { subject: value } : { query: value }),
+      ...(filters.availability === 'online' ? { availableOnline: true } : {}),
+      ...(filters.availability === 'in-person' ? { availableInPerson: true } : {}),
+    }
+    onSearch(searchFilters)
   }
 
   const handleReset = () => {
@@ -91,11 +116,9 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
         {/* Search Bar */}
         <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="flex-1">
-            <Input
+            <SearchAutocomplete
               placeholder="Pretraži instruktore, predmete..."
-              value={filters.query}
-              onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-              icon={<Search className="w-5 h-5" />}
+              onSelect={handleAutocompleteSelect}
             />
           </div>
           <Button type="submit" variant="primary">

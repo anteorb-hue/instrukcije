@@ -15,6 +15,9 @@ export async function GET(req: Request) {
     const city = searchParams.get('city') || ''
     const availableDate = searchParams.get('availableDate') || ''
     const availableTime = searchParams.get('availableTime') || ''
+    const videoProvider = searchParams.get('videoProvider') || ''
+    const availableOnline = searchParams.get('availableOnline')
+    const availableInPerson = searchParams.get('availableInPerson')
 
     // Calculate dayOfWeek from date (0-6, Sunday-Saturday)
     let dayOfWeek: number | undefined
@@ -46,6 +49,17 @@ export async function GET(req: Request) {
           } : {}),
           ...(city ? {
             city: city,
+          } : {}),
+          ...(videoProvider ? {
+            videoProviders: {
+              has: videoProvider as any,
+            },
+          } : {}),
+          ...(availableOnline === 'true' ? {
+            availableOnline: true,
+          } : {}),
+          ...(availableInPerson === 'true' ? {
+            availableInPerson: true,
           } : {}),
         },
         ...(tier ? {

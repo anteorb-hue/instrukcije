@@ -31,6 +31,9 @@ export default function TutorsPage() {
       if (filters.city) params.append('city', filters.city)
       if (filters.availableDate) params.append('availableDate', filters.availableDate)
       if (filters.availableTime) params.append('availableTime', filters.availableTime)
+      if (filters.videoProvider) params.append('videoProvider', filters.videoProvider)
+      if (filters.availableOnline !== undefined) params.append('availableOnline', filters.availableOnline.toString())
+      if (filters.availableInPerson !== undefined) params.append('availableInPerson', filters.availableInPerson.toString())
 
       const response = await fetch(`/api/tutors?${params.toString()}`)
 
@@ -48,12 +51,12 @@ export default function TutorsPage() {
         title: tutor.tutorProfile?.title || tutor.bio || 'Instruktor',
         hourlyRate: tutor.tutorProfile?.hourlyRate || 0,
         averageRating: tutor.tutorProfile?.averageRating || 0,
-        totalSessions: tutor.tutorProfile?.totalLessons || 0,
+        totalSessions: tutor.tutorProfile?.totalSessions || 0,
         subjects: tutor.tutorProfile?.subjects?.map((s: any) => s.subject.name) || [],
         verified: tutor.tutorProfile?.verified || false,
-        availableOnline: true, // Could add this field to DB if needed
-        availableInPerson: true, // Could add this field to DB if needed
-        responseTime: 20, // Could calculate from messages if needed
+        availableOnline: tutor.tutorProfile?.availableOnline ?? true,
+        availableInPerson: tutor.tutorProfile?.availableInPerson ?? false,
+        responseTime: tutor.tutorProfile?.responseTime || null,
         tier: tutor.userPoints?.currentTier || null,
       }))
 

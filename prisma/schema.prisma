@@ -96,6 +96,7 @@ model TutorProfile {
   languages         String[] // JSON array of languages
   availableOnline   Boolean  @default(true)
   availableInPerson Boolean  @default(false)
+  videoProviders    VideoProvider[] // Supported video platforms
 
   // Location
   city              String?
