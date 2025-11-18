@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { testListingSelect, getPagination } from '@/lib/query-optimization'
 
 // GET /api/tests - List all tests
 export async function GET(req: Request) {
@@ -12,8 +13,11 @@ export async function GET(req: Request) {
     const search = searchParams.get('search')
     const isPublic = searchParams.get('isPublic')
     const isActive = searchParams.get('isActive')
+    const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+
+    const { skip, take } = offset > 0 ? { skip: offset, take: limit } : getPagination(page, limit)
 
     const where: any = {
       ...(tutorId && { tutorId }),
@@ -33,30 +37,9 @@ export async function GET(req: Request) {
     const [tests, total] = await Promise.all([
       prisma.test.findMany({
         where,
-        include: {
-          tutor: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          subject: {
-            select: {
-              id: true,
-              name: true,
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              questions: true,
-              submissions: true,
-            },
-          },
-        },
-        skip: offset,
-        take: limit,
+        select: testListingSelect,
+        skip,
+        take,
         orderBy: {
           createdAt: 'desc',
         },
@@ -140,14 +123,17 @@ export async function POST(req: Request) {
             },
           }),
       },
-      include: {
-        tutor: {
-          select: { id: true, name: true, avatar: true },
-        },
-        subject: true,
-        _count: {
-          select: { questions: true },
-        },
+      select: {
+        ...testListingSelect,
+        instructions: true,
+        timeLimit: true,
+        passingScore: true,
+        shuffleQuestions: true,
+        showCorrectAnswers: true,
+        allowRetake: true,
+        maxAttempts: true,
+        createdAt: true,
+        updatedAt: true,
       },
     })
 

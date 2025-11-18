@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAdmin } from '@/lib/auth-middleware'
+import { cache, CACHE_TTL, buildCacheKey } from '@/lib/cache'
+import { userPublicSelect } from '@/lib/query-optimization'
 
 // GET /api/admin/analytics/overview - Platform overview statistics (Admin only)
 export const GET = withAdmin(async (req: NextRequest) => {
@@ -9,6 +11,15 @@ export const GET = withAdmin(async (req: NextRequest) => {
     const period = searchParams.get('period') || '30' // days
 
     const periodDays = parseInt(period)
+
+    // Try to get from cache first
+    const cacheKey = buildCacheKey('analytics', 'overview', { period: periodDays })
+    const cached = cache.get<any>(cacheKey)
+
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - periodDays)
 
@@ -115,7 +126,8 @@ export const GET = withAdmin(async (req: NextRequest) => {
     // Top tutors by sessions
     const topTutors = await prisma.user.findMany({
       where: { role: 'TUTOR' },
-      include: {
+      select: {
+        ...userPublicSelect,
         tutorProfile: {
           select: {
             totalSessions: true,
@@ -132,7 +144,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
       take: 5,
     })
 
-    return NextResponse.json({
+    const result = {
       totals: {
         users: totalUsers,
         tutors: totalTutors,
@@ -172,7 +184,12 @@ export const GET = withAdmin(async (req: NextRequest) => {
           verified: t.tutorProfile?.verified || false,
         })),
       },
-    })
+    }
+
+    // Cache the result (5 minutes TTL for analytics)
+    cache.set(cacheKey, result, CACHE_TTL.MEDIUM)
+
+    return NextResponse.json(result)
   } catch (error: any) {
     console.error('Error fetching overview analytics:', error)
     return NextResponse.json(

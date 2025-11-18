@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { homeworkQuestionListingSelect, getPagination } from '@/lib/query-optimization'
 
 // GET /api/homework - List all homework questions
 export async function GET(req: Request) {
@@ -13,8 +14,11 @@ export async function GET(req: Request) {
     const assignedTutorId = searchParams.get('assignedTutorId')
     const tag = searchParams.get('tag')
     const search = searchParams.get('search')
+    const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+
+    const { skip, take } = offset > 0 ? { skip: offset, take: limit } : getPagination(page, limit)
 
     const where: any = {
       ...(studentId && { studentId }),
@@ -34,49 +38,9 @@ export async function GET(req: Request) {
     const [questions, total] = await Promise.all([
       prisma.homeworkQuestion.findMany({
         where,
-        include: {
-          student: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          subject: {
-            select: {
-              id: true,
-              name: true,
-              category: true,
-            },
-          },
-          assignedTutor: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          acceptedAnswer: {
-            select: {
-              id: true,
-              content: true,
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              answers: true,
-            },
-          },
-        },
-        skip: offset,
-        take: limit,
+        select: homeworkQuestionListingSelect,
+        skip,
+        take,
         orderBy: {
           createdAt: 'desc',
         },
@@ -132,13 +96,21 @@ export async function POST(req: Request) {
         tags: tags || [],
         assignedTutorId,
       },
-      include: {
-        student: {
-          select: { id: true, name: true, avatar: true },
-        },
-        subject: true,
+      select: {
+        ...homeworkQuestionListingSelect,
+        description: true,
+        attachments: true,
+        tags: true,
+        educationLevel: true,
+        createdAt: true,
+        updatedAt: true,
         assignedTutor: {
-          select: { id: true, name: true, avatar: true, email: true },
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            email: true,
+          },
         },
       },
     })

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { materialListingSelect, getPagination } from '@/lib/query-optimization'
 
 // GET /api/materials - List all materials
 export async function GET(req: Request) {
@@ -14,8 +15,11 @@ export async function GET(req: Request) {
     const isPublic = searchParams.get('isPublic')
     const isFree = searchParams.get('isFree')
     const tag = searchParams.get('tag')
+    const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+
+    const { skip, take } = offset > 0 ? { skip: offset, take: limit } : getPagination(page, limit)
 
     const materials = await prisma.material.findMany({
       where: {
@@ -44,34 +48,12 @@ export async function GET(req: Request) {
             }
           : {}),
       },
-      include: {
-        tutor: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        subject: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
-        tags: true,
-        _count: {
-          select: {
-            views: true,
-            downloads: true,
-          },
-        },
-      },
+      select: materialListingSelect,
       orderBy: {
         createdAt: 'desc',
       },
-      skip: offset,
-      take: limit,
+      skip,
+      take,
     })
 
     // Get total count
@@ -153,16 +135,17 @@ export async function POST(req: Request) {
             },
           }),
       },
-      include: {
-        tutor: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        subject: true,
-        tags: true,
+      select: {
+        ...materialListingSelect,
+        fileSize: true,
+        mimeType: true,
+        pageCount: true,
+        duration: true,
+        price: true,
+        isFree: true,
+        isPublic: true,
+        createdAt: true,
+        updatedAt: true,
       },
     })
 
