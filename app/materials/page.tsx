@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import useSWR from 'swr'
 import {
   FileText,
   Video,
@@ -9,104 +10,48 @@ import {
   Eye,
   Upload,
   Search,
-  Filter,
   Heart,
   Share2,
-  Bookmark,
   BookOpen,
+  Loader2,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Input from '@/components/ui/Input'
-import { formatFileSize } from '@/lib/utils'
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function MaterialsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [selectedSubject, setSelectedSubject] = useState('all')
 
-  const materials = [
-    {
-      id: '1',
-      title: 'Derivacije - Kompletni vodič',
-      type: 'pdf',
-      subject: 'Matematika',
-      tutor: 'Ana Horvat',
-      size: '2.4 MB',
-      downloads: 234,
-      uploadDate: '2025-01-15',
-      description: 'Kompletni vodič kroz derivacije sa primjerima i zadacima',
-      thumbnail: null,
-      tags: ['derivacije', 'kalkulus', 'matematika'],
-      saved: true,
-    },
-    {
-      id: '2',
-      title: 'English Grammar - Present Tenses',
-      type: 'video',
-      subject: 'Engleski jezik',
-      tutor: 'Marko Novak',
-      size: '45.2 MB',
-      downloads: 456,
-      uploadDate: '2025-01-14',
-      description: 'Video lekcija o svim present tense oblicima u engleskom',
-      thumbnail: null,
-      tags: ['grammar', 'tenses', 'english'],
-      saved: false,
-    },
-    {
-      id: '3',
-      title: 'React Hooks - Cheat Sheet',
-      type: 'pdf',
-      subject: 'Programiranje',
-      tutor: 'Petra Kovačić',
-      size: '1.8 MB',
-      downloads: 789,
-      uploadDate: '2025-01-13',
-      description: 'Sažetak svih React hooks sa primjerima korištenja',
-      thumbnail: null,
-      tags: ['react', 'hooks', 'javascript'],
-      saved: true,
-    },
-    {
-      id: '4',
-      title: 'Periodični sustav elemenata - Plakat',
-      type: 'image',
-      subject: 'Kemija',
-      tutor: 'Ivan Babić',
-      size: '5.1 MB',
-      downloads: 345,
-      uploadDate: '2025-01-12',
-      description: 'Visokokvalitetni plakat periodičnog sustava',
-      thumbnail: null,
-      tags: ['kemija', 'elementi', 'periodični sustav'],
-      saved: false,
-    },
-    {
-      id: '5',
-      title: 'Mikroekonomija - Bilješke sa predavanja',
-      type: 'pdf',
-      subject: 'Ekonomija',
-      tutor: 'Lucija Marić',
-      size: '3.2 MB',
-      downloads: 123,
-      uploadDate: '2025-01-11',
-      description: 'Kompletne bilješke sa predavanja mikroekonomije',
-      thumbnail: null,
-      tags: ['ekonomija', 'mikroekonomija', 'bilješke'],
-      saved: false,
-    },
-  ]
+  // Build API query params
+  const params = new URLSearchParams()
+  if (searchQuery) params.append('search', searchQuery)
+  if (selectedType !== 'all') params.append('type', selectedType.toUpperCase())
+  if (selectedSubject !== 'all') params.append('subjectId', selectedSubject)
+  params.append('limit', '50')
 
+  // Fetch materials from API
+  const { data, error, isLoading } = useSWR(
+    `/api/materials?${params.toString()}`,
+    fetcher
+  )
+
+  // Fetch subjects for filter
+  const { data: subjectsData } = useSWR('/api/subjects', fetcher)
+
+  const materials = data?.materials || []
+  const subjects = subjectsData || []
   const stats = {
-    totalMaterials: 1234,
-    myUploads: 12,
-    savedMaterials: 45,
-    totalDownloads: 3456,
+    totalMaterials: data?.total || 0,
+    myUploads: 0, // TODO: Filter by current user
+    savedMaterials: 0, // TODO: Implement favorites
+    totalDownloads: materials.reduce((sum: number, m: any) => sum + (m.downloadCount || 0), 0),
   }
 
-  const subjects = ['Matematika', 'Engleski jezik', 'Programiranje', 'Kemija', 'Ekonomija', 'Fizika']
   const types = [
     { value: 'all', label: 'Sve', icon: <BookOpen className="w-4 h-4" /> },
     { value: 'pdf', label: 'PDF', icon: <FileText className="w-4 h-4" /> },
@@ -115,29 +60,53 @@ export default function MaterialsPage() {
   ]
 
   const getFileIcon = (type: string) => {
-    switch (type) {
-      case 'pdf':
+    switch (type?.toUpperCase()) {
+      case 'PDF':
         return <FileText className="w-8 h-8 text-red-500" />
-      case 'video':
+      case 'VIDEO':
         return <Video className="w-8 h-8 text-blue-500" />
-      case 'image':
+      case 'IMAGE':
         return <ImageIcon className="w-8 h-8 text-green-500" />
       default:
         return <FileText className="w-8 h-8 text-gray-500" />
     }
   }
 
-  const filteredMaterials = materials.filter((material) => {
-    const matchesSearch =
-      material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
 
-    const matchesType = selectedType === 'all' || material.type === selectedType
-    const matchesSubject = selectedSubject === 'all' || material.subject === selectedSubject
+  const handleDownload = async (materialId: string) => {
+    try {
+      // Track download
+      await fetch(`/api/materials/${materialId}/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: null }), // TODO: Add current user ID
+      })
 
-    return matchesSearch && matchesType && matchesSubject
-  })
+      // TODO: Trigger actual download
+    } catch (error) {
+      console.error('Download error:', error)
+    }
+  }
+
+  const handleView = async (materialId: string) => {
+    try {
+      // Track view
+      await fetch(`/api/materials/${materialId}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: null }), // TODO: Add current user ID
+      })
+    } catch (error) {
+      console.error('View error:', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -165,7 +134,7 @@ export default function MaterialsPage() {
           </Card>
           <Card className="text-center">
             <p className="text-2xl font-bold text-green-600">{stats.totalDownloads}</p>
-            <p className="text-sm text-gray-600">Moja preuzimanja</p>
+            <p className="text-sm text-gray-600">Ukupno preuzimanja</p>
           </Card>
         </div>
 
@@ -205,17 +174,17 @@ export default function MaterialsPage() {
                 >
                   Svi predmeti
                 </button>
-                {subjects.map((subject) => (
+                {subjects.map((subject: any) => (
                   <button
-                    key={subject}
-                    onClick={() => setSelectedSubject(subject)}
+                    key={subject.id}
+                    onClick={() => setSelectedSubject(subject.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      selectedSubject === subject
+                      selectedSubject === subject.id
                         ? 'bg-primary-600 text-white'
                         : 'hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {subject}
+                    {subject.name}
                   </button>
                 ))}
               </div>
@@ -244,88 +213,112 @@ export default function MaterialsPage() {
               />
             </div>
 
-            {/* Results */}
-            <div className="mb-4 text-sm text-gray-600">
-              Pronađeno {filteredMaterials.length} materijala
-            </div>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredMaterials.map((material) => (
-                <Card key={material.id} hover>
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0">{getFileIcon(material.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900 truncate pr-2">
-                          {material.title}
-                        </h3>
-                        <button
-                          className={`flex-shrink-0 ${
-                            material.saved ? 'text-red-500' : 'text-gray-400'
-                          }`}
-                        >
-                          <Heart
-                            className={`w-5 h-5 ${material.saved ? 'fill-current' : ''}`}
-                          />
-                        </button>
-                      </div>
-
-                      <Badge variant="info" className="mb-2">
-                        {material.subject}
-                      </Badge>
-
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {material.description}
-                      </p>
-
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {material.tags.slice(0, 3).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <div>
-                          <p>{material.tutor}</p>
-                          <p>{material.size}</p>
-                        </div>
-                        <div className="text-right">
-                          <p>{material.downloads} preuzimanja</p>
-                          <p>{material.uploadDate}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 mt-4">
-                        <Button variant="primary" size="sm" className="flex-1">
-                          <Download className="w-4 h-4 mr-1" />
-                          Preuzmi
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {filteredMaterials.length === 0 && (
+            {/* Error State */}
+            {error && (
               <Card className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg text-gray-600">Nema pronađenih materijala</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Pokušajte s drugim filterima ili pretraživanjem
-                </p>
+                <p className="text-lg text-red-600">Greška pri učitavanju materijala</p>
+                <p className="text-sm text-gray-500 mt-2">Molimo pokušajte ponovno</p>
               </Card>
+            )}
+
+            {/* Results */}
+            {!isLoading && !error && (
+              <>
+                <div className="mb-4 text-sm text-gray-600">
+                  Pronađeno {materials.length} materijala
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {materials.map((material: any) => (
+                    <Card key={material.id} hover>
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0">{getFileIcon(material.type)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-gray-900 truncate pr-2">
+                              {material.title}
+                            </h3>
+                            <button className="flex-shrink-0 text-gray-400 hover:text-red-500">
+                              <Heart className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          <Badge variant="info" className="mb-2">
+                            {material.subject?.name || 'Bez predmeta'}
+                          </Badge>
+
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                            {material.description || 'Nema opisa'}
+                          </p>
+
+                          {material.tags && material.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {material.tags.slice(0, 3).map((tagObj: any, index: number) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                                >
+                                  #{tagObj.tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <div>
+                              <p>{material.tutor?.name || 'Nepoznato'}</p>
+                              <p>{formatFileSize(material.fileSize || 0)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p>{material.downloadCount || 0} preuzimanja</p>
+                              <p>{material.viewCount || 0} pregleda</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 mt-4">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleDownload(material.id)}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Preuzmi
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleView(material.id)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Share2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {materials.length === 0 && (
+                  <Card className="text-center py-12">
+                    <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-lg text-gray-600">Nema pronađenih materijala</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Pokušajte s drugim filterima ili pretraživanjem
+                    </p>
+                  </Card>
+                )}
+              </>
             )}
           </div>
         </div>
