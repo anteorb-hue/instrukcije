@@ -8,6 +8,9 @@ import Avatar from '@/components/ui/Avatar'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import VideoCall from '@/components/VideoCall'
+import IncomingCall from '@/components/IncomingCall'
+import { useSocket } from '@/contexts/SocketContext'
 import { formatTime } from '@/lib/utils'
 
 interface Message {
@@ -45,6 +48,7 @@ interface Conversation {
 export default function MessagesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { socket, isConnected } = useSocket()
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -52,6 +56,29 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Video call states
+  const [activeCall, setActiveCall] = useState<{
+    callId: string
+    roomId: string
+    type: 'VIDEO' | 'AUDIO'
+    isInitiator: boolean
+    otherUser: {
+      id: string
+      name: string
+      avatar: string | null
+    }
+  } | null>(null)
+  const [incomingCall, setIncomingCall] = useState<{
+    callId: string
+    roomId: string
+    type: 'VIDEO' | 'AUDIO'
+    caller: {
+      id: string
+      name: string
+      avatar: string | null
+    }
+  } | null>(null)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -238,6 +265,105 @@ export default function MessagesPage() {
     }
   }, [selectedUserId])
 
+  // ===== WebRTC Call Functions =====
+
+  // Initiate a call
+  const initiateCall = (type: 'VIDEO' | 'AUDIO') => {
+    if (!selectedUserId || !session?.user?.id || !socket) return
+
+    const selectedConv = conversations.find((c) => c.user.id === selectedUserId)
+    if (!selectedConv) return
+
+    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+    // Emit call initiation
+    socket.emit('call:initiate', {
+      callerId: session.user.id,
+      receiverId: selectedUserId,
+      type,
+      roomId,
+    })
+
+    // Listen for call initiated confirmation
+    socket.once('call:initiated', (data: { callId: string; roomId: string }) => {
+      setActiveCall({
+        callId: data.callId,
+        roomId: data.roomId,
+        type,
+        isInitiator: true,
+        otherUser: selectedConv.user,
+      })
+    })
+
+    // Listen for errors
+    socket.once('call:error', (data: { error: string }) => {
+      alert(data.error)
+    })
+  }
+
+  // Socket listeners for incoming calls
+  useEffect(() => {
+    if (!socket) return
+
+    socket.on('call:incoming', (data: {
+      callId: string
+      caller: {
+        id: string
+        name: string
+        avatar: string | null
+      }
+      type: 'VIDEO' | 'AUDIO'
+      roomId: string
+    }) => {
+      setIncomingCall({
+        callId: data.callId,
+        roomId: data.roomId,
+        type: data.type,
+        caller: data.caller,
+      })
+    })
+
+    socket.on('call:rejected', () => {
+      alert('Poziv je odbijen')
+      setActiveCall(null)
+    })
+
+    return () => {
+      socket.off('call:incoming')
+      socket.off('call:rejected')
+    }
+  }, [socket])
+
+  // Accept incoming call
+  const acceptCall = () => {
+    if (!incomingCall) return
+
+    setActiveCall({
+      callId: incomingCall.callId,
+      roomId: incomingCall.roomId,
+      type: incomingCall.type,
+      isInitiator: false,
+      otherUser: incomingCall.caller,
+    })
+    setIncomingCall(null)
+  }
+
+  // Reject incoming call
+  const rejectCall = () => {
+    if (!incomingCall || !socket) return
+
+    socket.emit('call:reject', {
+      callId: incomingCall.callId,
+      callerId: incomingCall.caller.id,
+    })
+    setIncomingCall(null)
+  }
+
+  // Close active call
+  const closeCall = () => {
+    setActiveCall(null)
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -348,10 +474,22 @@ export default function MessagesPage() {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm" disabled>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => initiateCall('AUDIO')}
+                        disabled={!isConnected || !selectedUserId}
+                        title="Audio poziv"
+                      >
                         <Phone className="w-5 h-5" />
                       </Button>
-                      <Button variant="ghost" size="sm" disabled>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => initiateCall('VIDEO')}
+                        disabled={!isConnected || !selectedUserId}
+                        title="Video poziv"
+                      >
                         <Video className="w-5 h-5" />
                       </Button>
                       <Button variant="ghost" size="sm">
@@ -437,6 +575,30 @@ export default function MessagesPage() {
           </div>
         )}
       </div>
+
+      {/* Active Video Call */}
+      {activeCall && session?.user?.id && (
+        <VideoCall
+          socket={socket}
+          currentUserId={session.user.id}
+          otherUser={activeCall.otherUser}
+          callType={activeCall.type}
+          isInitiator={activeCall.isInitiator}
+          callId={activeCall.callId}
+          roomId={activeCall.roomId}
+          onClose={closeCall}
+        />
+      )}
+
+      {/* Incoming Call */}
+      {incomingCall && (
+        <IncomingCall
+          caller={incomingCall.caller}
+          callType={incomingCall.type}
+          onAccept={acceptCall}
+          onReject={rejectCall}
+        />
+      )}
     </div>
   )
 }

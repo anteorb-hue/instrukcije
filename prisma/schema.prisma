@@ -69,6 +69,8 @@ model User {
   // Relations
   sentMessages      Message[]     @relation("SentMessages")
   receivedMessages  Message[]     @relation("ReceivedMessages")
+  callsInitiated    VideoCall[]   @relation("CallsInitiated")
+  callsReceived     VideoCall[]   @relation("CallsReceived")
   bookingsAsStudent Booking[]     @relation("StudentBookings")
   bookingsAsTutor   Booking[]     @relation("TutorBookings")
   reviews           Review[]      @relation("ReviewsGiven")
@@ -337,6 +339,52 @@ model Message {
   updatedAt   DateTime @updatedAt
 
   @@map("messages")
+}
+
+enum CallType {
+  AUDIO
+  VIDEO
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  ANSWERED
+  ENDED
+  MISSED
+  REJECTED
+  FAILED
+}
+
+model VideoCall {
+  id              String      @id @default(cuid())
+
+  callerId        String
+  caller          User        @relation("CallsInitiated", fields: [callerId], references: [id])
+
+  receiverId      String
+  receiver        User        @relation("CallsReceived", fields: [receiverId], references: [id])
+
+  type            CallType    @default(VIDEO)
+  status          CallStatus  @default(INITIATED)
+
+  // WebRTC session details
+  roomId          String      @unique
+  offer           String?     @db.Text
+  answer          String?     @db.Text
+
+  // Call timing
+  startedAt       DateTime?
+  endedAt         DateTime?
+  duration        Int?        // in seconds
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("video_calls")
+  @@index([callerId])
+  @@index([receiverId])
+  @@index([status])
 }
 
 model Notification {
