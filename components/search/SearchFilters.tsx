@@ -22,6 +22,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     videoProvider: '',
     tier: '',
     city: '',
+    availableDate: '',
+    availableTime: '',
   })
 
   const subjects = [
@@ -76,6 +78,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       videoProvider: '',
       tier: '',
       city: '',
+      availableDate: '',
+      availableTime: '',
     }
     setFilters(resetFilters)
     onSearch(resetFilters)
@@ -258,6 +262,31 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Available Date & Time */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dostupnost (datum)
+              </label>
+              <input
+                type="date"
+                className="input-field"
+                value={filters.availableDate}
+                onChange={(e) => setFilters({ ...filters, availableDate: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dostupnost (vrijeme)
+              </label>
+              <input
+                type="time"
+                className="input-field"
+                value={filters.availableTime}
+                onChange={(e) => setFilters({ ...filters, availableTime: e.target.value })}
+              />
             </div>
 
             {/* Reset Button */}

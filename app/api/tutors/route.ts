@@ -13,6 +13,15 @@ export async function GET(req: Request) {
     const rating = searchParams.get('rating') ? parseFloat(searchParams.get('rating')!) : undefined
     const tier = searchParams.get('tier') || ''
     const city = searchParams.get('city') || ''
+    const availableDate = searchParams.get('availableDate') || ''
+    const availableTime = searchParams.get('availableTime') || ''
+
+    // Calculate dayOfWeek from date (0-6, Sunday-Saturday)
+    let dayOfWeek: number | undefined
+    if (availableDate) {
+      const date = new Date(availableDate)
+      dayOfWeek = date.getDay()
+    }
 
     const tutors = await prisma.user.findMany({
       where: {
@@ -59,6 +68,7 @@ export async function GET(req: Request) {
                 subject: true,
               },
             },
+            availability: true,
           },
         },
         userPoints: true,
@@ -71,11 +81,35 @@ export async function GET(req: Request) {
     })
 
     // Filter by subject if provided
-    const filteredTutors = subject
+    let filteredTutors = subject
       ? tutors.filter((tutor) =>
           tutor.tutorProfile?.subjects.some((s) => s.subject.name === subject)
         )
       : tutors
+
+    // Filter by availability if date and time provided
+    if (dayOfWeek !== undefined && availableTime) {
+      filteredTutors = filteredTutors.filter((tutor) => {
+        const availability = tutor.tutorProfile?.availability || []
+        return availability.some((slot) => {
+          // Check if day matches
+          if (slot.dayOfWeek !== dayOfWeek) return false
+
+          // Check if time is within start-end range
+          // Convert HH:mm to minutes for comparison
+          const timeToMinutes = (time: string) => {
+            const [hours, minutes] = time.split(':').map(Number)
+            return hours * 60 + minutes
+          }
+
+          const requestedTime = timeToMinutes(availableTime)
+          const slotStart = timeToMinutes(slot.startTime)
+          const slotEnd = timeToMinutes(slot.endTime)
+
+          return requestedTime >= slotStart && requestedTime <= slotEnd
+        })
+      })
+    }
 
     return NextResponse.json(filteredTutors)
   } catch (error) {
