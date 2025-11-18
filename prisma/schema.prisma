@@ -90,6 +90,12 @@ model User {
   questionsCreated  Question[]
   testSubmissions   TestSubmission[]
 
+  // Homework Help
+  homeworkQuestions HomeworkQuestion[] @relation("StudentQuestions")
+  assignedQuestions HomeworkQuestion[] @relation("AssignedQuestions")
+  homeworkAnswers   HomeworkAnswer[]
+  answerVotes       AnswerVote[]
+
   @@map("users")
 }
 
@@ -203,6 +209,7 @@ model Subject {
   materials   Material[]
   tests       Test[]
   questions   Question[]
+  homeworkQuestions HomeworkQuestion[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -541,6 +548,14 @@ enum TestDifficulty {
   EXPERT
 }
 
+// Homework Help System
+
+enum QuestionStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
 model Material {
   id          String       @id @default(cuid())
 
@@ -840,4 +855,106 @@ model SubmissionAnswer {
   @@map("submission_answers")
   @@index([submissionId])
   @@index([questionId])
+}
+
+// Homework Help Models
+
+model HomeworkQuestion {
+  id              String          @id @default(cuid())
+
+  // Author
+  studentId       String
+  student         User            @relation("StudentQuestions", fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Content
+  title           String
+  description     String          @db.Text
+  attachments     String[]        // URLs to images, PDFs, etc.
+
+  // Categorization
+  subjectId       String?
+  subject         Subject?        @relation(fields: [subjectId], references: [id])
+
+  educationLevel  EducationLevel?
+  tags            String[]
+
+  // Status
+  status          QuestionStatus  @default(OPEN)
+
+  // Optional: Assign to specific tutor
+  assignedTutorId String?
+  assignedTutor   User?           @relation("AssignedQuestions", fields: [assignedTutorId], references: [id], onDelete: SetNull)
+
+  // Accepted answer
+  acceptedAnswerId String?        @unique
+  acceptedAnswer  HomeworkAnswer? @relation("AcceptedAnswer", fields: [acceptedAnswerId], references: [id], onDelete: SetNull)
+
+  // Relations
+  answers         HomeworkAnswer[] @relation("QuestionAnswers")
+
+  // Analytics
+  viewCount       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("homework_questions")
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([status])
+  @@index([assignedTutorId])
+  @@index([createdAt])
+}
+
+model HomeworkAnswer {
+  id              String          @id @default(cuid())
+
+  questionId      String
+  question        HomeworkQuestion @relation("QuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Author (can be tutor or another student)
+  authorId        String
+  author          User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Content
+  content         String          @db.Text
+  attachments     String[]        // URLs to images, PDFs, etc.
+
+  // Accepted answer relation
+  acceptedFor     HomeworkQuestion? @relation("AcceptedAnswer")
+
+  // Voting
+  votes           AnswerVote[]
+  voteCount       Int             @default(0)  // Upvotes - Downvotes
+
+  // Helpful flag
+  isHelpful       Boolean         @default(false)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("homework_answers")
+  @@index([questionId])
+  @@index([authorId])
+  @@index([voteCount])
+  @@index([createdAt])
+}
+
+model AnswerVote {
+  id              String          @id @default(cuid())
+
+  answerId        String
+  answer          HomeworkAnswer  @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  vote            Int             // 1 for upvote, -1 for downvote
+
+  createdAt       DateTime        @default(now())
+
+  @@unique([answerId, userId])
+  @@map("answer_votes")
+  @@index([answerId])
+  @@index([userId])
 }
