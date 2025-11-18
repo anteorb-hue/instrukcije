@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import {
   Bell,
   Check,
@@ -16,12 +18,12 @@ import {
   AlertCircle,
   Filter,
   Trash2,
-  Settings as SettingsIcon,
+  Loader2,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
-import { useRouter } from 'next/navigation'
+import { formatDateTime } from '@/lib/utils'
 
 interface Notification {
   id: string
@@ -29,85 +31,51 @@ interface Notification {
   title: string
   message: string
   read: boolean
-  createdAt: Date
-  data?: any
+  createdAt: string
+  data?: string | null
 }
 
 export default function NotificationsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
-  const router = useRouter()
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  // Mock data
-  const allNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'booking_received',
-      title: 'Nova rezervacija',
-      message: 'Marko Marić je zakazao instrukciju iz matematike za 18.01.2025. u 14:00',
-      read: false,
-      createdAt: new Date('2025-01-16T10:30:00'),
-    },
-    {
-      id: '2',
-      type: 'payment_received',
-      title: 'Plaćanje potvrđeno',
-      message: 'Ana Horvat je platila instrukciju - 150 kn. Novac će biti prebačen na vaš račun za 2-3 radna dana.',
-      read: false,
-      createdAt: new Date('2025-01-16T09:15:00'),
-    },
-    {
-      id: '3',
-      type: 'new_message',
-      title: 'Nova poruka',
-      message: 'Petra Kovačić: "Imam pitanje u vezi domaće zadaće..."',
-      read: false,
-      createdAt: new Date('2025-01-16T08:45:00'),
-    },
-    {
-      id: '4',
-      type: 'review_received',
-      title: 'Nova recenzija',
-      message: 'Ivan Petrović vam je ostavio recenziju 5/5: "Odličan instruktor! Sve jasno objašnjava."',
-      read: true,
-      createdAt: new Date('2025-01-15T16:20:00'),
-    },
-    {
-      id: '5',
-      type: 'booking_rescheduled',
-      title: 'Sesija prešedulirana',
-      message: 'Laura Babić je prešedulirala sesiju s 17.01. na 18.01.2025. u 15:00',
-      read: true,
-      createdAt: new Date('2025-01-15T14:10:00'),
-    },
-    {
-      id: '6',
-      type: 'booking_cancelled',
-      title: 'Sesija otkazana',
-      message: 'Marija Jurić je otkazala sesiju za 20.01.2025. Novac će biti vraćen.',
-      read: true,
-      createdAt: new Date('2025-01-15T11:00:00'),
-    },
-    {
-      id: '7',
-      type: 'session_starting',
-      title: 'Sesija uskoro počinje',
-      message: 'Vaša sesija s Tomislavom Horvat počinje za 15 minuta',
-      read: true,
-      createdAt: new Date('2025-01-14T13:45:00'),
-    },
-    {
-      id: '8',
-      type: 'reminder',
-      title: 'Podsjetnik',
-      message: 'Imate 3 sesije sutra. Pripremite materijale.',
-      read: true,
-      createdAt: new Date('2025-01-13T18:00:00'),
-    },
-  ]
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+    }
+  }, [status, router])
 
-  const [notifications, setNotifications] = useState(allNotifications)
+  // Fetch notifications
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchNotifications()
+    }
+  }, [status])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/notifications')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications')
+      }
+
+      const data: Notification[] = await response.json()
+      setNotifications(data)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredNotifications = notifications.filter((n) => {
     const matchesReadStatus =
@@ -164,26 +132,91 @@ export default function NotificationsPage() {
     return labels[type] || type
   }
 
-  const markAsRead = (notificationIds: string[]) => {
-    setNotifications((prev) =>
-      prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: true } : n))
-    )
+  const markAsRead = async (notificationIds: string[]) => {
+    try {
+      setActionLoading(true)
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark as read')
+      }
+
+      // Update local state
+      setNotifications((prev) =>
+        prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: true } : n))
+      )
+    } catch (error) {
+      console.error('Error marking as read:', error)
+      alert('Greška pri označavanju notifikacija')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const markAsUnread = (notificationIds: string[]) => {
-    setNotifications((prev) =>
-      prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: false } : n))
-    )
+  const markAllAsRead = async () => {
+    try {
+      setActionLoading(true)
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          markAll: true,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark all as read')
+      }
+
+      // Update local state
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    } catch (error) {
+      console.error('Error marking all as read:', error)
+      alert('Greška pri označavanju notifikacija')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const deleteNotifications = (notificationIds: string[]) => {
-    setNotifications((prev) => prev.filter((n) => !notificationIds.includes(n.id)))
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      setActionLoading(true)
+      const response = await fetch(`/api/notifications?id=${notificationId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete notification')
+      }
+
+      // Update local state
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+      setSelectedNotifications((prev) => prev.filter((id) => id !== notificationId))
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+      alert('Greška pri brisanju notifikacije')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const deleteSelected = async () => {
+    if (selectedNotifications.length === 0) return
+
+    for (const id of selectedNotifications) {
+      await deleteNotification(id)
+    }
     setSelectedNotifications([])
-  }
-
-  const markAllAsRead = () => {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id)
-    markAsRead(unreadIds)
   }
 
   const toggleSelectNotification = (id: string) => {
@@ -200,246 +233,280 @@ export default function NotificationsPage() {
     setSelectedNotifications([])
   }
 
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInMins = Math.floor(diffInMs / 60000)
-    const diffInHours = Math.floor(diffInMs / 3600000)
-    const diffInDays = Math.floor(diffInMs / 86400000)
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read
+    if (!notification.read) {
+      markAsRead([notification.id])
+    }
 
-    if (diffInMins < 1) return 'Upravo'
-    if (diffInMins < 60) return `Prije ${diffInMins} min`
-    if (diffInHours < 24) return `Prije ${diffInHours}h`
-    if (diffInDays < 7) return `Prije ${diffInDays}d`
-    return date.toLocaleDateString('hr-HR')
+    // Navigate based on type
+    try {
+      const data = notification.data ? JSON.parse(notification.data) : null
+
+      switch (notification.type) {
+        case 'new_message':
+          if (data?.messageId) {
+            router.push('/messages')
+          }
+          break
+        case 'booking_received':
+        case 'booking_confirmed':
+        case 'booking_rescheduled':
+        case 'booking_cancelled':
+          router.push('/bookings')
+          break
+        case 'payment_received':
+        case 'payment_completed':
+          router.push('/bookings')
+          break
+        case 'review_received':
+          router.push('/reviews')
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      console.error('Error parsing notification data:', error)
+    }
+  }
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container-custom max-w-5xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-3">
-              <h1 className="text-3xl font-bold text-gray-900">Notifikacije</h1>
-              {unreadCount > 0 && (
-                <Badge variant="danger" className="text-base">
-                  {unreadCount} novo
-                </Badge>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              icon={<SettingsIcon className="w-4 h-4" />}
-              onClick={() => router.push('/settings')}
-            >
-              Postavke
-            </Button>
-          </div>
-          <p className="text-gray-600">Pregledajte sve svoje notifikacije</p>
-        </div>
-
-        {/* Filters & Actions */}
-        <Card className="mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
-            {/* Filter Tabs */}
-            <div className="flex space-x-2">
-              {(['all', 'unread', 'read'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
-                    filter === f
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {f === 'all' ? 'Sve' : f === 'unread' ? 'Nepročitane' : 'Pročitane'}
-                </button>
-              ))}
-            </div>
-
-            {/* Type Filter */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">Sve vrste</option>
-              {notificationTypes.map((type) => (
-                <option key={type} value={type}>
-                  {getTypeLabel(type)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Bulk Actions */}
-          {selectedNotifications.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                {selectedNotifications.length} odabrano
-              </p>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<Check className="w-4 h-4" />}
-                  onClick={() => markAsRead(selectedNotifications)}
-                >
-                  Označi pročitanim
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<Bell className="w-4 h-4" />}
-                  onClick={() => markAsUnread(selectedNotifications)}
-                >
-                  Označi nepročitanim
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  icon={<Trash2 className="w-4 h-4" />}
-                  onClick={() => deleteNotifications(selectedNotifications)}
-                >
-                  Obriši
-                </Button>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Quick Actions */}
-        {filteredNotifications.length > 0 && (
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex space-x-2">
-              <button
-                onClick={selectAll}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Odaberi sve
-              </button>
-              {selectedNotifications.length > 0 && (
-                <button
-                  onClick={deselectAll}
-                  className="text-sm text-gray-600 hover:text-gray-700 font-medium"
-                >
-                  Poništi odabir
-                </button>
-              )}
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container-custom py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Obavijesti</h1>
             {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center"
-              >
-                <CheckCheck className="w-4 h-4 mr-1" />
-                Označi sve pročitanim
-              </button>
+              <p className="text-gray-600">
+                Imate {unreadCount} {unreadCount === 1 ? 'nepročitanu obavijest' : 'nepročitanih obavijesti'}
+              </p>
             )}
           </div>
-        )}
 
-        {/* Notifications List */}
-        <div className="space-y-3">
-          {filteredNotifications.length === 0 ? (
-            <Card className="text-center py-16">
-              <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-xl text-gray-600 mb-2">Nema notifikacija</p>
-              <p className="text-sm text-gray-500">
-                {filter === 'unread'
-                  ? 'Sve notifikacije su pročitane'
-                  : 'Ovdje će se prikazati vaše notifikacije'}
-              </p>
-            </Card>
-          ) : (
-            filteredNotifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`transition-all ${
-                  !notification.read ? 'bg-blue-50/50 border-l-4 border-l-blue-600' : ''
-                } ${selectedNotifications.includes(notification.id) ? 'ring-2 ring-primary-500' : ''}`}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={markAllAsRead}
+                disabled={actionLoading}
+                icon={<CheckCheck className="w-4 h-4" />}
               >
-                <div className="flex items-start space-x-4">
-                  {/* Checkbox */}
-                  <input
-                    type="checkbox"
-                    checked={selectedNotifications.includes(notification.id)}
-                    onChange={() => toggleSelectNotification(notification.id)}
-                    className="mt-1 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
+                Označi sve pročitano
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={fetchNotifications}
+              disabled={loading}
+              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+            >
+              Osvježi
+            </Button>
+          </div>
+        </div>
 
-                  {/* Icon */}
-                  <div className="flex-shrink-0 mt-1">
-                    {getNotificationIcon(notification.type)}
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Filters Sidebar */}
+          <Card className="lg:col-span-1 h-fit">
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                <Filter className="w-5 h-5 mr-2" />
+                Filteri
+              </h3>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3
-                          className={`text-base font-semibold mb-1 ${
-                            notification.read ? 'text-gray-700' : 'text-gray-900'
-                          }`}
-                        >
-                          {notification.title}
-                        </h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {getTypeLabel(notification.type)}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        )}
-                        <span className="text-sm text-gray-500 whitespace-nowrap">
-                          {formatTimeAgo(notification.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                    <p
-                      className={`text-sm mb-3 ${
-                        notification.read ? 'text-gray-600' : 'text-gray-700'
+              <div className="space-y-2 mb-6">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    filter === 'all' ? 'bg-primary-50 text-primary-700' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  Sve ({notifications.length})
+                </button>
+                <button
+                  onClick={() => setFilter('unread')}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    filter === 'unread' ? 'bg-primary-50 text-primary-700' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  Nepročitane ({unreadCount})
+                </button>
+                <button
+                  onClick={() => setFilter('read')}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    filter === 'read' ? 'bg-primary-50 text-primary-700' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  Pročitane ({notifications.length - unreadCount})
+                </button>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-2 text-sm">Tip obavijesti</h4>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setTypeFilter('all')}
+                    className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      typeFilter === 'all' ? 'bg-primary-50 text-primary-700' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    Sve
+                  </button>
+                  {notificationTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setTypeFilter(type)}
+                      className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                        typeFilter === type ? 'bg-primary-50 text-primary-700' : 'hover:bg-gray-50'
                       }`}
                     >
-                      {notification.message}
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      {!notification.read ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<Check className="w-3 h-3" />}
-                          onClick={() => markAsRead([notification.id])}
-                        >
-                          Označi pročitanim
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<Bell className="w-3 h-3" />}
-                          onClick={() => markAsUnread([notification.id])}
-                        >
-                          Označi nepročitanim
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Trash2 className="w-3 h-3" />}
-                        onClick={() => deleteNotifications([notification.id])}
-                      >
-                        Obriši
-                      </Button>
-                    </div>
+                      {getTypeLabel(type)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Notifications List */}
+          <div className="lg:col-span-3">
+            {selectedNotifications.length > 0 && (
+              <Card className="mb-4 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    {selectedNotifications.length} odabrano
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => markAsRead(selectedNotifications)}
+                      disabled={actionLoading}
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Označi pročitano
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={deleteSelected}
+                      disabled={actionLoading}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Obriši
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={deselectAll}>
+                      Poništi
+                    </Button>
                   </div>
                 </div>
               </Card>
-            ))
-          )}
+            )}
+
+            {filteredNotifications.length === 0 ? (
+              <Card className="p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {filter === 'all' ? 'Nemate obavijesti' : `Nemate ${filter === 'unread' ? 'nepročitanih' : 'pročitanih'} obavijesti`}
+                  </h3>
+                  <p className="text-gray-600">
+                    Obavijesti će se pojaviti ovdje
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {filteredNotifications.map((notification) => (
+                  <Card
+                    key={notification.id}
+                    className={`cursor-pointer hover:shadow-md transition-all ${
+                      !notification.read ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="p-4 flex items-start space-x-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedNotifications.includes(notification.id)}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleSelectNotification(notification.id)
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1"
+                      />
+
+                      <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-gray-900">{notification.title}</h4>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                            )}
+                          </div>
+                          <Badge variant="secondary" className="ml-2 whitespace-nowrap">
+                            {getTypeLabel(notification.type)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDateTime(new Date(notification.createdAt))}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {!notification.read && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              markAsRead([notification.id])
+                            }}
+                            disabled={actionLoading}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteNotification(notification.id)
+                          }}
+                          disabled={actionLoading}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {filteredNotifications.length > 0 && (
+              <div className="mt-4 text-center">
+                <Button variant="ghost" onClick={selectAll}>
+                  Odaberi sve
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

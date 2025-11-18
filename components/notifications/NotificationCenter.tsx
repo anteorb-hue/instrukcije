@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import {
   Bell,
-  Check,
   CheckCheck,
   X,
   Calendar,
@@ -14,12 +14,9 @@ import {
   Video,
   RefreshCw,
   AlertCircle,
-  FileText,
   Settings,
-  ExternalLink,
 } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 
 interface Notification {
@@ -28,11 +25,12 @@ interface Notification {
   title: string
   message: string
   read: boolean
-  createdAt: Date
-  data?: any
+  createdAt: string
+  data?: string | null
 }
 
 export default function NotificationCenter() {
+  const { data: session, status } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -40,69 +38,12 @@ export default function NotificationCenter() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Mock data - in production, fetch from API
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'booking_received',
-      title: 'Nova rezervacija',
-      message: 'Marko Marić je zakazao instrukciju',
-      read: false,
-      createdAt: new Date('2025-01-16T10:30:00'),
-      data: { bookingId: '123' },
-    },
-    {
-      id: '2',
-      type: 'payment_received',
-      title: 'Plaćanje potvrđeno',
-      message: 'Ana Horvat je platila instrukciju - 150 kn',
-      read: false,
-      createdAt: new Date('2025-01-16T09:15:00'),
-      data: { paymentId: '456' },
-    },
-    {
-      id: '3',
-      type: 'new_message',
-      title: 'Nova poruka',
-      message: 'Petra Kovačić vam je poslala poruku',
-      read: false,
-      createdAt: new Date('2025-01-16T08:45:00'),
-      data: { userId: '789' },
-    },
-    {
-      id: '4',
-      type: 'review_received',
-      title: 'Nova recenzija',
-      message: 'Dobili ste ocjenu 5/5 od Ivan Petrović',
-      read: true,
-      createdAt: new Date('2025-01-15T16:20:00'),
-      data: { reviewId: '321' },
-    },
-    {
-      id: '5',
-      type: 'booking_rescheduled',
-      title: 'Sesija prešedulirana',
-      message: 'Sesija je prešedulirana na 18.01.2025. 15:00',
-      read: true,
-      createdAt: new Date('2025-01-15T14:10:00'),
-      data: { bookingId: '654' },
-    },
-    {
-      id: '6',
-      type: 'booking_cancelled',
-      title: 'Sesija otkazana',
-      message: 'Student je otkazao sesiju za 20.01.2025.',
-      read: true,
-      createdAt: new Date('2025-01-15T11:00:00'),
-      data: { bookingId: '987' },
-    },
-  ]
-
+  // Fetch notifications when authenticated
   useEffect(() => {
-    // Load notifications
-    setNotifications(mockNotifications)
-    setUnreadCount(mockNotifications.filter((n) => !n.read).length)
-  }, [])
+    if (status === 'authenticated') {
+      fetchNotifications()
+    }
+  }, [status])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -120,6 +61,25 @@ export default function NotificationCenter() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/notifications?limit=10')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications')
+      }
+
+      const data: Notification[] = await response.json()
+      setNotifications(data)
+      setUnreadCount(data.filter((n) => !n.read).length)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -148,71 +108,108 @@ export default function NotificationCenter() {
     }
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     // Mark as read
-    markAsRead([notification.id])
+    if (!notification.read) {
+      await markAsRead([notification.id])
+    }
 
     // Navigate based on type
-    switch (notification.type) {
-      case 'booking_received':
-      case 'booking_confirmed':
-      case 'booking_rescheduled':
-      case 'booking_cancelled':
-        router.push('/bookings')
-        break
-      case 'payment_received':
-      case 'payment_completed':
-        router.push('/dashboard/earnings')
-        break
-      case 'new_message':
-        router.push('/messages')
-        break
-      case 'review_received':
-        router.push('/dashboard')
-        break
-      default:
-        router.push('/notifications')
+    try {
+      const data = notification.data ? JSON.parse(notification.data) : null
+
+      switch (notification.type) {
+        case 'booking_received':
+        case 'booking_confirmed':
+        case 'booking_rescheduled':
+        case 'booking_cancelled':
+          router.push('/bookings')
+          break
+        case 'payment_received':
+        case 'payment_completed':
+          router.push('/bookings')
+          break
+        case 'new_message':
+          if (data?.messageId) {
+            router.push('/messages')
+          }
+          break
+        case 'review_received':
+          router.push('/reviews')
+          break
+        default:
+          router.push('/notifications')
+      }
+    } catch (error) {
+      console.error('Error parsing notification data:', error)
+      router.push('/notifications')
     }
 
     setIsOpen(false)
   }
 
-  const markAsRead = (notificationIds: string[]) => {
-    setNotifications((prev) =>
-      prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: true } : n))
-    )
-    setUnreadCount((prev) => Math.max(0, prev - notificationIds.length))
+  const markAsRead = async (notificationIds: string[]) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notificationIds }),
+      })
 
-    // In production, call API
-    // await fetch('/api/notifications', {
-    //   method: 'PATCH',
-    //   body: JSON.stringify({ notificationIds }),
-    // })
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: true } : n))
+        )
+        setUnreadCount((prev) => Math.max(0, prev - notificationIds.length))
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error)
+    }
   }
 
-  const markAllAsRead = () => {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id)
-    markAsRead(unreadIds)
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markAll: true }),
+      })
 
-    // In production, call API with markAll flag
-    // await fetch('/api/notifications', {
-    //   method: 'PATCH',
-    //   body: JSON.stringify({ markAll: true }),
-    // })
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error)
+    }
   }
 
-  const deleteNotification = (notificationId: string, e: React.MouseEvent) => {
+  const deleteNotification = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+    try {
+      const response = await fetch(`/api/notifications?id=${notificationId}`, {
+        method: 'DELETE',
+      })
 
-    // In production, call API
-    // await fetch(`/api/notifications?id=${notificationId}`, {
-    //   method: 'DELETE',
-    // })
+      if (response.ok) {
+        const notification = notifications.find((n) => n.id === notificationId)
+        if (notification && !notification.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1))
+        }
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+    }
   }
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
     const now = new Date()
     const diffInMs = now.getTime() - date.getTime()
     const diffInMins = Math.floor(diffInMs / 60000)
@@ -228,6 +225,11 @@ export default function NotificationCenter() {
 
   const unreadNotifications = notifications.filter((n) => !n.read)
   const readNotifications = notifications.filter((n) => n.read)
+
+  // Don't render if not authenticated
+  if (status !== 'authenticated') {
+    return null
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -251,25 +253,33 @@ export default function NotificationCenter() {
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <h3 className="text-lg font-semibold text-gray-900">Notifikacije</h3>
-              {unreadCount > 0 && (
-                <Badge variant="danger">{unreadCount}</Badge>
-              )}
+              {unreadCount > 0 && <Badge variant="danger">{unreadCount}</Badge>}
             </div>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
                   className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  title="Označi sve pročitano"
                 >
-                  Označi sve
+                  <CheckCheck className="w-5 h-5" />
                 </button>
               )}
+              <button
+                onClick={fetchNotifications}
+                disabled={loading}
+                className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                title="Osvježi"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </button>
               <button
                 onClick={() => {
                   router.push('/notifications')
                   setIsOpen(false)
                 }}
                 className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                title="Postavke"
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -289,9 +299,7 @@ export default function NotificationCenter() {
                 {unreadNotifications.length > 0 && (
                   <div>
                     <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-600 uppercase">
-                        Nepročitane
-                      </p>
+                      <p className="text-xs font-semibold text-gray-600 uppercase">Nepročitane</p>
                     </div>
                     {unreadNotifications.map((notification) => (
                       <div
@@ -315,9 +323,7 @@ export default function NotificationCenter() {
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
-                            <p className="text-sm text-gray-600 mb-1">
-                              {notification.message}
-                            </p>
+                            <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
                             <p className="text-xs text-gray-500">
                               {formatTimeAgo(notification.createdAt)}
                             </p>
@@ -334,9 +340,7 @@ export default function NotificationCenter() {
                   <div>
                     {unreadNotifications.length > 0 && (
                       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                        <p className="text-xs font-semibold text-gray-600 uppercase">
-                          Pročitane
-                        </p>
+                        <p className="text-xs font-semibold text-gray-600 uppercase">Pročitane</p>
                       </div>
                     )}
                     {readNotifications.slice(0, 5).map((notification) => (
@@ -361,9 +365,7 @@ export default function NotificationCenter() {
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
-                            <p className="text-sm text-gray-500 mb-1">
-                              {notification.message}
-                            </p>
+                            <p className="text-sm text-gray-500 mb-1">{notification.message}</p>
                             <p className="text-xs text-gray-400">
                               {formatTimeAgo(notification.createdAt)}
                             </p>
