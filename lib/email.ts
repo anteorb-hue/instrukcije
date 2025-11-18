@@ -1,5 +1,5 @@
-// Email notification service
-// This is a placeholder - in production, use a service like SendGrid, Resend, or AWS SES
+// Email notification service using Resend
+import { Resend } from 'resend'
 
 interface EmailOptions {
   to: string
@@ -8,39 +8,37 @@ interface EmailOptions {
   text?: string
 }
 
+const resend = new Resend(process.env.RESEND_API_KEY)
+
 export async function sendEmail(options: EmailOptions): Promise<void> {
-  console.log('Sending email:', options)
-
-  // In production, implement with actual email service:
-  /*
-  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [{
-        to: [{ email: options.to }],
-        subject: options.subject,
-      }],
-      from: {
-        email: process.env.EMAIL_FROM || 'noreply@instrukcije.hr',
-        name: 'Instrukcije.hr',
-      },
-      content: [
-        {
-          type: 'text/html',
-          value: options.html,
-        },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to send email')
+  // If no API key is configured, log instead of failing
+  if (!process.env.RESEND_API_KEY) {
+    console.log('⚠️  RESEND_API_KEY not configured. Email would have been sent:')
+    console.log('To:', options.to)
+    console.log('Subject:', options.subject)
+    console.log('---')
+    return
   }
-  */
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'Instrukcije.hr <noreply@instrukcije.hr>',
+      to: [options.to],
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    })
+
+    if (error) {
+      console.error('Failed to send email:', error)
+      throw new Error('Failed to send email')
+    }
+
+    console.log('✅ Email sent successfully:', data?.id)
+  } catch (error) {
+    console.error('Email sending error:', error)
+    throw error
+  }
 }
 
 export async function sendBookingConfirmation(params: {
