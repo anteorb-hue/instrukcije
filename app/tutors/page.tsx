@@ -1,153 +1,69 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import TutorCard from '@/components/tutors/TutorCard'
 import SearchFilters from '@/components/search/SearchFilters'
 import { Loader2 } from 'lucide-react'
 
-// All tutors data
-const ALL_TUTORS = [
-  {
-    id: '1',
-    name: 'Ana Horvat',
-    avatar: null,
-    title: 'Magistar matematike sa 10+ godina iskustva',
-    hourlyRate: 25,
-    averageRating: 4.9,
-    totalSessions: 234,
-    subjects: ['Matematika', 'Fizika', 'Statistika'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: true,
-    responseTime: 15,
-  },
-  {
-    id: '2',
-    name: 'Marko Novak',
-    avatar: null,
-    title: 'Native speaker, Cambridge certificiran',
-    hourlyRate: 30,
-    averageRating: 4.8,
-    totalSessions: 189,
-    subjects: ['Engleski jezik', 'Business English'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: false,
-    responseTime: 20,
-  },
-  {
-    id: '3',
-    name: 'Petra Kovačić',
-    avatar: null,
-    title: 'Full-stack developer i mentor',
-    hourlyRate: 40,
-    averageRating: 5.0,
-    totalSessions: 156,
-    subjects: ['Programiranje', 'Web Development', 'JavaScript', 'React'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: true,
-    responseTime: 10,
-  },
-  {
-    id: '4',
-    name: 'Ivan Babić',
-    avatar: null,
-    title: 'Profesor kemije sa 15 godina iskustva',
-    hourlyRate: 28,
-    averageRating: 4.7,
-    totalSessions: 312,
-    subjects: ['Kemija', 'Biokemija', 'Organska kemija'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: true,
-    responseTime: 30,
-  },
-  {
-    id: '5',
-    name: 'Lucija Marić',
-    avatar: null,
-    title: 'Diplomirani ekonomist',
-    hourlyRate: 22,
-    averageRating: 4.8,
-    totalSessions: 98,
-    subjects: ['Ekonomija', 'Računovodstvo', 'Poslovna ekonomija'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: false,
-    responseTime: 25,
-  },
-  {
-    id: '6',
-    name: 'Tomislav Jurić',
-    avatar: null,
-    title: 'Certificirani instruktor njemačkog jezika',
-    hourlyRate: 26,
-    averageRating: 4.9,
-    totalSessions: 178,
-    subjects: ['Njemački jezik', 'Poslovno njemački'],
-    verified: true,
-    availableOnline: true,
-    availableInPerson: true,
-    responseTime: 15,
-  },
-]
-
 export default function TutorsPage() {
-  const [loading, setLoading] = useState(false)
-  const [tutors, setTutors] = useState(ALL_TUTORS)
+  const [loading, setLoading] = useState(true)
+  const [tutors, setTutors] = useState<any[]>([])
+  const [initialLoad, setInitialLoad] = useState(true)
+
+  // Load all tutors on mount
+  useEffect(() => {
+    fetchTutors({})
+  }, [])
+
+  const fetchTutors = async (filters: any) => {
+    try {
+      setLoading(true)
+
+      // Build query params from filters
+      const params = new URLSearchParams()
+      if (filters.query) params.append('query', filters.query)
+      if (filters.subject) params.append('subject', filters.subject)
+      if (filters.educationLevel) params.append('educationLevel', filters.educationLevel)
+      if (filters.priceMin) params.append('priceMin', filters.priceMin.toString())
+      if (filters.priceMax) params.append('priceMax', filters.priceMax.toString())
+      if (filters.rating) params.append('rating', filters.rating.toString())
+
+      const response = await fetch(`/api/tutors?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch tutors')
+      }
+
+      const data = await response.json()
+
+      // Transform API response to match TutorCard interface
+      const transformedTutors = data.map((tutor: any) => ({
+        id: tutor.id,
+        name: tutor.name,
+        avatar: tutor.avatar,
+        title: tutor.tutorProfile?.title || tutor.bio || 'Instruktor',
+        hourlyRate: tutor.tutorProfile?.hourlyRate || 0,
+        averageRating: tutor.tutorProfile?.averageRating || 0,
+        totalSessions: tutor.tutorProfile?.totalLessons || 0,
+        subjects: tutor.tutorProfile?.subjects?.map((s: any) => s.subject.name) || [],
+        verified: tutor.tutorProfile?.verified || false,
+        availableOnline: true, // Could add this field to DB if needed
+        availableInPerson: true, // Could add this field to DB if needed
+        responseTime: 20, // Could calculate from messages if needed
+      }))
+
+      setTutors(transformedTutors)
+    } catch (error) {
+      console.error('Error fetching tutors:', error)
+      setTutors([])
+    } finally {
+      setLoading(false)
+      setInitialLoad(false)
+    }
+  }
 
   const handleSearch = async (filters: any) => {
-    setLoading(true)
-
-    // Simulate API delay
-    setTimeout(() => {
-      let filtered = [...ALL_TUTORS]
-
-      // Filter by search query (name, title, subjects)
-      if (filters.query) {
-        const query = filters.query.toLowerCase()
-        filtered = filtered.filter(
-          (tutor) =>
-            tutor.name.toLowerCase().includes(query) ||
-            tutor.title.toLowerCase().includes(query) ||
-            tutor.subjects.some((subject) => subject.toLowerCase().includes(query))
-        )
-      }
-
-      // Filter by subject
-      if (filters.subject) {
-        filtered = filtered.filter((tutor) =>
-          tutor.subjects.includes(filters.subject)
-        )
-      }
-
-      // Filter by rating
-      if (filters.rating) {
-        const minRating = parseFloat(filters.rating)
-        filtered = filtered.filter((tutor) => tutor.averageRating >= minRating)
-      }
-
-      // Filter by price range
-      if (filters.priceMin) {
-        const minPrice = parseFloat(filters.priceMin)
-        filtered = filtered.filter((tutor) => tutor.hourlyRate >= minPrice)
-      }
-      if (filters.priceMax) {
-        const maxPrice = parseFloat(filters.priceMax)
-        filtered = filtered.filter((tutor) => tutor.hourlyRate <= maxPrice)
-      }
-
-      // Filter by availability
-      if (filters.availability === 'online') {
-        filtered = filtered.filter((tutor) => tutor.availableOnline)
-      } else if (filters.availability === 'in-person') {
-        filtered = filtered.filter((tutor) => tutor.availableInPerson)
-      }
-
-      setTutors(filtered)
-      setLoading(false)
-    }, 500)
+    await fetchTutors(filters)
   }
 
   return (

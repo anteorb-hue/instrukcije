@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import {
@@ -25,6 +27,7 @@ import {
   FileText,
   Star,
   MessageSquare,
+  Loader2,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -63,6 +66,8 @@ interface Booking {
 }
 
 export default function BookingsPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed' | 'cancelled'>(
@@ -77,141 +82,86 @@ export default function BookingsPage() {
   const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date())
   const [rescheduleTime, setRescheduleTime] = useState('10:00')
   const [cancelReason, setCancelReason] = useState('')
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  // Mock data
-  const bookings: Booking[] = [
-    {
-      id: '1',
-      subject: 'Matematika - Derivacije',
-      tutor: {
-        id: 'tutor-1',
-        name: 'Ana Horvat',
-        rating: 4.9,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-18T14:00:00'),
-      duration: 60,
-      price: 150,
-      status: 'upcoming',
-      videoProvider: 'zoom',
-      meetingUrl: 'https://zoom.us/j/123456789',
-      sessionType: 'online',
-      canReschedule: true,
-      canCancel: true,
-    },
-    {
-      id: '2',
-      subject: 'Engleski jezik - Konverzacija',
-      tutor: {
-        id: 'tutor-2',
-        name: 'Marko Novak',
-        rating: 5.0,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-20T16:00:00'),
-      duration: 45,
-      price: 120,
-      status: 'upcoming',
-      videoProvider: 'meet',
-      meetingUrl: 'https://meet.google.com/abc-defg-hij',
-      sessionType: 'online',
-      canReschedule: true,
-      canCancel: true,
-    },
-    {
-      id: '3',
-      subject: 'Programiranje - React',
-      tutor: {
-        id: 'tutor-3',
-        name: 'Petra Kovačić',
-        rating: 4.8,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-15T10:00:00'),
-      duration: 90,
-      price: 200,
-      status: 'completed',
-      videoProvider: 'zoom',
-      sessionType: 'online',
-      canReschedule: false,
-      canCancel: false,
-      rating: 5,
-      reviewed: true,
-    },
-    {
-      id: '4',
-      subject: 'Fizika - Mehanika',
-      tutor: {
-        id: 'tutor-4',
-        name: 'Ivan Petrović',
-        rating: 4.7,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-12T15:00:00'),
-      duration: 60,
-      price: 140,
-      status: 'completed',
-      videoProvider: 'teams',
-      sessionType: 'online',
-      canReschedule: false,
-      canCancel: false,
-      rating: 4,
-      reviewed: true,
-    },
-    {
-      id: '5',
-      subject: 'Kemija - Organska kemija',
-      tutor: {
-        id: 'tutor-5',
-        name: 'Laura Babić',
-        rating: 4.9,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-10T11:00:00'),
-      duration: 60,
-      price: 150,
-      status: 'cancelled',
-      sessionType: 'online',
-      canReschedule: false,
-      canCancel: false,
-    },
-    {
-      id: '6',
-      subject: 'Matematika - Integrali',
-      tutor: {
-        id: 'tutor-1',
-        name: 'Ana Horvat',
-        rating: 4.9,
-      },
-      student: {
-        id: 'student-1',
-        name: 'Marko Marić',
-      },
-      date: new Date('2025-01-22T14:00:00'),
-      duration: 60,
-      price: 150,
-      status: 'upcoming',
-      videoProvider: 'zoom',
-      sessionType: 'online',
-      canReschedule: true,
-      canCancel: true,
-    },
-  ]
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+    }
+  }, [status, router])
+
+  // Fetch bookings
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchBookings()
+    }
+  }, [status])
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/bookings')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings')
+      }
+
+      const data = await response.json()
+
+      // Transform API response to match frontend interface
+      const transformedBookings: Booking[] = data.map((booking: any) => {
+        // Map API status to frontend status
+        let frontendStatus: 'upcoming' | 'completed' | 'cancelled' | 'rescheduled' = 'upcoming'
+        if (booking.status === 'COMPLETED') frontendStatus = 'completed'
+        else if (booking.status === 'CANCELLED' || booking.status.startsWith('NO_SHOW')) frontendStatus = 'cancelled'
+        else if (booking.status === 'SCHEDULED' || booking.status === 'IN_PROGRESS') frontendStatus = 'upcoming'
+
+        // Determine if can reschedule/cancel (only upcoming bookings within reasonable time)
+        const scheduledDate = new Date(booking.scheduledAt)
+        const hoursUntil = (scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60)
+        const canModify = frontendStatus === 'upcoming' && hoursUntil > 1
+
+        return {
+          id: booking.id,
+          subject: booking.subject?.name || 'Instrukcija',
+          tutor: {
+            id: booking.tutor.id,
+            name: booking.tutor.name,
+            avatar: booking.tutor.avatar,
+            rating: booking.tutor.tutorProfile?.rating || 0,
+          },
+          student: {
+            id: booking.student.id,
+            name: booking.student.name,
+            avatar: booking.student.avatar,
+          },
+          date: new Date(booking.scheduledAt),
+          duration: booking.duration,
+          price: booking.price,
+          status: frontendStatus,
+          videoProvider: booking.videoProvider as 'zoom' | 'meet' | 'teams',
+          meetingUrl: booking.meetingUrl,
+          notes: booking.studentNotes || booking.tutorNotes,
+          sessionType: 'online',
+          canReschedule: canModify,
+          canCancel: canModify,
+          reviewed: !!booking.review,
+          rating: booking.review?.rating,
+        }
+      })
+
+      setBookings(transformedBookings)
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      toast.error('Greška pri dohvaćanju rezervacija')
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesStatus = filterStatus === 'all' || booking.status === filterStatus
@@ -259,24 +209,75 @@ export default function BookingsPage() {
     return null
   }
 
-  const handleReschedule = () => {
-    if (!selectedBooking) return
+  const handleReschedule = async () => {
+    if (!selectedBooking || actionLoading) return
 
-    toast.success('Sesija uspješno rescheduleana')
-    setShowRescheduleModal(false)
-    setSelectedBooking(null)
+    try {
+      setActionLoading(true)
+
+      // Combine date and time
+      const [hours, minutes] = rescheduleTime.split(':')
+      const newScheduledAt = new Date(rescheduleDate)
+      newScheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scheduledAt: newScheduledAt.toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reschedule booking')
+      }
+
+      toast.success('Sesija uspješno rescheduleana')
+      setShowRescheduleModal(false)
+      setSelectedBooking(null)
+
+      // Refresh bookings
+      await fetchBookings()
+    } catch (error) {
+      console.error('Error rescheduling booking:', error)
+      toast.error('Greška pri rescheduleanju sesije')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const handleCancel = () => {
-    if (!selectedBooking || !cancelReason) {
+  const handleCancel = async () => {
+    if (!selectedBooking || !cancelReason || actionLoading) {
       toast.error('Molimo navedite razlog otkazivanja')
       return
     }
 
-    toast.success('Sesija uspješno otkazana. Novac će biti vraćen.')
-    setShowCancelModal(false)
-    setSelectedBooking(null)
-    setCancelReason('')
+    try {
+      setActionLoading(true)
+
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel booking')
+      }
+
+      toast.success('Sesija uspješno otkazana. Novac će biti vraćen.')
+      setShowCancelModal(false)
+      setSelectedBooking(null)
+      setCancelReason('')
+
+      // Refresh bookings
+      await fetchBookings()
+    } catch (error) {
+      console.error('Error cancelling booking:', error)
+      toast.error('Greška pri otkazivanju sesije')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const exportToGoogleCalendar = (booking: Booking) => {
@@ -332,6 +333,14 @@ END:VCALENDAR`
       case 'rescheduled':
         return <Badge variant="warning">Prešedulirano</Badge>
     }
+  }
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    )
   }
 
   const BookingCard = ({ booking }: { booking: Booking }) => (
@@ -716,13 +725,26 @@ END:VCALENDAR`
               </div>
 
               <div className="flex space-x-3">
-                <Button variant="primary" className="flex-1" onClick={handleReschedule}>
-                  Pošalji zahtjev
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={handleReschedule}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Rescheduleanje...
+                    </>
+                  ) : (
+                    'Pošalji zahtjev'
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => setShowRescheduleModal(false)}
+                  disabled={actionLoading}
                 >
                   Odustani
                 </Button>
@@ -776,14 +798,22 @@ END:VCALENDAR`
                   variant="danger"
                   className="flex-1"
                   onClick={handleCancel}
-                  disabled={!cancelReason}
+                  disabled={!cancelReason || actionLoading}
                 >
-                  Potvrdi otkazivanje
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Otkazivanje...
+                    </>
+                  ) : (
+                    'Potvrdi otkazivanje'
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => setShowCancelModal(false)}
+                  disabled={actionLoading}
                 >
                   Odustani
                 </Button>
