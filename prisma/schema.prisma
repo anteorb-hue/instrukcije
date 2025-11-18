@@ -85,6 +85,11 @@ model User {
   materialViews     MaterialView[]
   materialDownloads MaterialDownload[]
 
+  // Tests & Quizzes
+  testsCreated      Test[]
+  questionsCreated  Question[]
+  testSubmissions   TestSubmission[]
+
   @@map("users")
 }
 
@@ -196,6 +201,8 @@ model Subject {
   tutors      SubjectTaught[]
   bookings    Booking[]
   materials   Material[]
+  tests       Test[]
+  questions   Question[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -517,6 +524,23 @@ enum MaterialType {
   OTHER
 }
 
+// Tests & Quizzes System
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  FILL_IN_BLANK
+}
+
+enum TestDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
 model Material {
   id          String       @id @default(cuid())
 
@@ -624,4 +648,196 @@ model MaterialDownload {
   @@index([materialId])
   @@index([userId])
   @@index([downloadedAt])
+}
+
+// Tests & Quizzes Models
+
+model Test {
+  id              String          @id @default(cuid())
+
+  // Owner
+  tutorId         String
+  tutor           User            @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  // Content
+  title           String
+  description     String?         @db.Text
+  instructions    String?         @db.Text
+
+  // Categorization
+  subjectId       String?
+  subject         Subject?        @relation(fields: [subjectId], references: [id])
+
+  educationLevel  EducationLevel?
+  difficulty      TestDifficulty  @default(MEDIUM)
+
+  // Settings
+  timeLimit       Int?            // in minutes, null = no time limit
+  passingScore    Float           @default(60)  // percentage
+  shuffleQuestions Boolean        @default(false)
+  showCorrectAnswers Boolean      @default(true)
+  allowRetake     Boolean         @default(true)
+  maxAttempts     Int?            // null = unlimited
+
+  // Visibility
+  isPublic        Boolean         @default(false)
+  isActive        Boolean         @default(true)
+
+  // Relations
+  questions       TestQuestion[]
+  submissions     TestSubmission[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("tests")
+  @@index([tutorId])
+  @@index([subjectId])
+  @@index([isPublic])
+  @@index([isActive])
+}
+
+model Question {
+  id              String          @id @default(cuid())
+
+  // Owner (for question bank)
+  tutorId         String
+  tutor           User            @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  // Content
+  questionText    String          @db.Text
+  type            QuestionType
+  points          Float           @default(1)
+
+  // For multiple choice
+  options         QuestionOption[]
+
+  // For other types
+  correctAnswer   String?         @db.Text  // For short answer, true/false, fill in blank
+
+  // Explanation
+  explanation     String?         @db.Text
+
+  // Categorization
+  subjectId       String?
+  subject         Subject?        @relation(fields: [subjectId], references: [id])
+
+  educationLevel  EducationLevel?
+  difficulty      TestDifficulty  @default(MEDIUM)
+  tags            String[]
+
+  // Usage
+  testsUsedIn     TestQuestion[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("questions")
+  @@index([tutorId])
+  @@index([subjectId])
+  @@index([type])
+}
+
+model QuestionOption {
+  id              String   @id @default(cuid())
+
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  optionText      String   @db.Text
+  isCorrect       Boolean  @default(false)
+  order           Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  @@map("question_options")
+  @@index([questionId])
+}
+
+// Join table for Test <-> Question (allows reusing questions)
+model TestQuestion {
+  id              String   @id @default(cuid())
+
+  testId          String
+  test            Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  questionId      String
+  question        Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  order           Int      @default(0)
+  pointOverride   Float?   // Override default points for this specific test
+
+  @@unique([testId, questionId])
+  @@map("test_questions")
+  @@index([testId])
+  @@index([questionId])
+}
+
+model TestSubmission {
+  id              String          @id @default(cuid())
+
+  testId          String
+  test            Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  studentId       String
+  student         User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Timing
+  startedAt       DateTime        @default(now())
+  submittedAt     DateTime?
+  timeSpent       Int?            // in seconds
+
+  // Grading
+  score           Float?          // percentage
+  pointsEarned    Float?
+  pointsPossible  Float?
+  passed          Boolean?
+
+  // Grading status
+  isGraded        Boolean         @default(false)
+  gradedAt        DateTime?
+  gradedBy        String?         // userId of grader (tutor)
+  feedback        String?         @db.Text
+
+  // Answers
+  answers         SubmissionAnswer[]
+
+  // Metadata
+  attemptNumber   Int             @default(1)
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("test_submissions")
+  @@index([testId])
+  @@index([studentId])
+  @@index([isGraded])
+  @@index([createdAt])
+}
+
+model SubmissionAnswer {
+  id                String          @id @default(cuid())
+
+  submissionId      String
+  submission        TestSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  questionId        String
+
+  // Student's answer
+  answerText        String?         @db.Text
+  selectedOptionId  String?         // For multiple choice
+
+  // Grading
+  isCorrect         Boolean?
+  pointsEarned      Float?
+  pointsPossible    Float?
+  feedback          String?         @db.Text
+
+  createdAt         DateTime        @default(now())
+
+  @@map("submission_answers")
+  @@index([submissionId])
+  @@index([questionId])
 }
