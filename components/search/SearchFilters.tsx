@@ -21,6 +21,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     availability: '',
     videoProvider: '',
     tier: '',
+    city: '',
   })
 
   const subjects = [
@@ -43,6 +44,21 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     { value: 'OSTALO', label: 'Ostalo' },
   ]
 
+  const cities = [
+    'Zagreb',
+    'Split',
+    'Rijeka',
+    'Osijek',
+    'Zadar',
+    'Pula',
+    'Slavonski Brod',
+    'Karlovac',
+    'Varaždin',
+    'Šibenik',
+    'Sisak',
+    'Dubrovnik',
+  ]
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSearch(filters)
@@ -59,6 +75,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       availability: '',
       videoProvider: '',
       tier: '',
+      city: '',
     }
     setFilters(resetFilters)
     onSearch(resetFilters)
@@ -221,6 +238,25 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                 <option value="GOLD">🥇 Gold</option>
                 <option value="PLATINUM">💎 Platinum</option>
                 <option value="ELITE">⭐ Elite</option>
+              </select>
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Grad
+              </label>
+              <select
+                className="input-field"
+                value={filters.city}
+                onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+              >
+                <option value="">Svi gradovi</option>
+                {cities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
               </select>
             </div>
 

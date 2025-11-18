@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     const priceMax = searchParams.get('priceMax') ? parseFloat(searchParams.get('priceMax')!) : undefined
     const rating = searchParams.get('rating') ? parseFloat(searchParams.get('rating')!) : undefined
     const tier = searchParams.get('tier') || ''
+    const city = searchParams.get('city') || ''
 
     const tutors = await prisma.user.findMany({
       where: {
@@ -33,6 +34,9 @@ export async function GET(req: Request) {
             educationLevels: {
               has: educationLevel,
             },
+          } : {}),
+          ...(city ? {
+            city: city,
           } : {}),
         },
         ...(tier ? {

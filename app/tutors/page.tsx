@@ -28,6 +28,7 @@ export default function TutorsPage() {
       if (filters.priceMax) params.append('priceMax', filters.priceMax.toString())
       if (filters.rating) params.append('rating', filters.rating.toString())
       if (filters.tier) params.append('tier', filters.tier)
+      if (filters.city) params.append('city', filters.city)
 
       const response = await fetch(`/api/tutors?${params.toString()}`)
 

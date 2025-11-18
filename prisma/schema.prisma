@@ -97,6 +97,11 @@ model TutorProfile {
   availableOnline   Boolean  @default(true)
   availableInPerson Boolean  @default(false)
 
+  // Location
+  city              String?
+  address           String?
+  country           String   @default("Hrvatska")
+
   // Education
   education         String   @db.Text
   certifications    String[] // JSON array
