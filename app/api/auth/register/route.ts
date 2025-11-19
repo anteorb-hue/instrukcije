@@ -2,18 +2,54 @@ import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { rewardReferral } from '@/lib/rewards'
+import { checkRateLimit, RateLimitPresets } from '@/lib/rate-limit'
+import { registrationSchema, safeValidateRequest } from '@/lib/validation-schemas'
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, role, referralCode } = await req.json()
+    // RATE LIMITING: Prevent registration spam and abuse (5 attempts per 15 min per IP)
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = checkRateLimit(
+      `register:${ip}`,
+      RateLimitPresets.AUTH
+    )
 
-    // Validate input
-    if (!name || !email || !password || !role) {
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: 'Sva polja su obavezna' },
+        {
+          error: 'Previše pokušaja registracije. Molimo pričekajte prije ponovnog pokušaja.',
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': RateLimitPresets.AUTH.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '900',
+          },
+        }
+      )
+    }
+
+    const body = await req.json()
+
+    // INPUT VALIDATION: Use Zod schema with comprehensive password validation
+    const validation = safeValidateRequest(registrationSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validation.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          }))
+        },
         { status: 400 }
       )
     }
+
+    const { name, email, password, role, referralCode } = validation.data
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({

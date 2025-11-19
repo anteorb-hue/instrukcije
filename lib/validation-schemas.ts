@@ -181,6 +181,23 @@ export const paginationSchema = z.object({
 })
 
 // ============================================================================
+// Auth Validation
+// ============================================================================
+
+export const registrationSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  role: z.enum(['STUDENT', 'TUTOR', 'PARENT']),
+  referralCode: z.string().max(20).optional(),
+})
+
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'Password is required'),
+})
+
+// ============================================================================
 // Helper Function: Validate and Parse
 // ============================================================================
 
