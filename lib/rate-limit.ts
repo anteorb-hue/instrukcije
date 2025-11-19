@@ -2,14 +2,38 @@
  * Rate Limiting Utility
  *
  * Simple in-memory rate limiter using sliding window algorithm.
- * For production, consider using Redis for distributed rate limiting.
+ * For production, consider using Redis for distributed rate limiting across multiple servers.
+ *
+ * @module lib/rate-limit
+ * @example
+ * ```typescript
+ * import { checkRateLimit, RateLimitPresets } from '@/lib/rate-limit'
+ *
+ * // In your API route
+ * const result = checkRateLimit('user:123', RateLimitPresets.STANDARD)
+ * if (!result.allowed) {
+ *   return new Response('Too many requests', { status: 429 })
+ * }
+ * ```
  */
 
+/**
+ * Rate limit configuration
+ * @interface RateLimitConfig
+ * @property {number} interval - Time window in milliseconds
+ * @property {number} maxRequests - Maximum requests allowed per interval
+ */
 interface RateLimitConfig {
-  interval: number // Time window in milliseconds
-  maxRequests: number // Maximum requests per interval
+  interval: number
+  maxRequests: number
 }
 
+/**
+ * Request tracking log
+ * @interface RequestLog
+ * @property {number} count - Number of requests made in current window
+ * @property {number} resetTime - Timestamp when the window resets (ms since epoch)
+ */
 interface RequestLog {
   count: number
   resetTime: number

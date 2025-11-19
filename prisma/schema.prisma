@@ -98,6 +98,8 @@ model User {
   answerVotes       AnswerVote[]
 
   @@map("users")
+  @@index([role])
+  @@index([createdAt])
 }
 
 model TutorProfile {
@@ -285,6 +287,12 @@ model Booking {
   updatedAt       DateTime        @updatedAt
 
   @@map("bookings")
+  @@index([studentId])
+  @@index([tutorId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([studentId, status])
+  @@index([tutorId, status])
 }
 
 model Payment {
@@ -311,6 +319,9 @@ model Payment {
   updatedAt       DateTime      @updatedAt
 
   @@map("payments")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Review {
@@ -337,6 +348,9 @@ model Review {
   updatedAt       DateTime @updatedAt
 
   @@map("reviews")
+  @@index([reviewerId])
+  @@index([reviewedId])
+  @@index([createdAt])
 }
 
 model Message {
@@ -359,6 +373,10 @@ model Message {
   updatedAt   DateTime @updatedAt
 
   @@map("messages")
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([receiverId, read])
+  @@index([createdAt])
 }
 
 model Notification {
@@ -376,6 +394,9 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@map("notifications")
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
 }
 
 model Favorite {
