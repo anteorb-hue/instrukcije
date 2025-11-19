@@ -275,10 +275,13 @@ export default function NotificationCenter() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label={unreadCount > 0 ? `Notifikacije, ${unreadCount} nepročitanih` : 'Notifikacije'}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
-        <Bell className="w-6 h-6" />
+        <Bell className="w-6 h-6" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full" aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -286,17 +289,18 @@ export default function NotificationCenter() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col" role="dialog" aria-label="Panel notifikacija">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-semibold text-gray-900">Notifikacije</h3>
+              <h3 className="text-lg font-semibold text-gray-900" id="notifications-heading">Notifikacije</h3>
               {unreadCount > 0 && <Badge variant="danger">{unreadCount}</Badge>}
             </div>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
+                  aria-label="Označi sve kao pročitano"
                   className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   title="Označi sve pročitano"
                 >
@@ -307,9 +311,10 @@ export default function NotificationCenter() {
                 onClick={fetchNotifications}
                 disabled={loading}
                 className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                aria-label="Osvježi notifikacije"
                 title="Osvježi"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
               </button>
               <button
                 onClick={() => {
@@ -317,18 +322,19 @@ export default function NotificationCenter() {
                   setIsOpen(false)
                 }}
                 className="p-1 text-gray-500 hover:text-gray-700 rounded"
+                aria-label="Otvori postavke notifikacija"
                 title="Postavke"
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
 
           {/* Notifications List */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" role="region" aria-labelledby="notifications-heading">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center">
-                <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div className="p-8 text-center" role="status">
+                <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" aria-hidden="true" />
                 <p className="text-gray-600">Nema notifikacija</p>
               </div>
             ) : (
@@ -337,7 +343,7 @@ export default function NotificationCenter() {
                 {unreadNotifications.length > 0 && (
                   <div>
                     <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-600 uppercase">Nepročitane</p>
+                      <p className="text-xs font-semibold text-gray-600 uppercase" id="unread-notifications-heading">Nepročitane</p>
                     </div>
                     {unreadNotifications.map((notification) => (
                       <div

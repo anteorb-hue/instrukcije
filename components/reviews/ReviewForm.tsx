@@ -184,7 +184,7 @@ export default function ReviewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" aria-label={`Forma za ocjenu instruktora ${tutorName}`}>
       {/* Overall Rating */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -253,7 +253,7 @@ export default function ReviewForm({
 
       {/* Photo Upload */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2" id="photo-upload-label">
           Dodaj fotografije (opciono)
         </label>
         <div className="space-y-3">
@@ -265,9 +265,11 @@ export default function ReviewForm({
               onChange={handlePhotoUpload}
               className="hidden"
               disabled={isSubmitting}
+              aria-label="Upload fotografija za recenziju"
+              aria-describedby="photo-upload-label"
             />
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
-              <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors" role="button" tabIndex={0}>
+              <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
               <p className="text-sm text-gray-600">
                 Klikni za upload fotografija (max 5)
               </p>
@@ -275,20 +277,21 @@ export default function ReviewForm({
           </label>
 
           {photoPreviews.length > 0 && (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2" role="list" aria-label="Uploadane fotografije">
               {photoPreviews.map((preview, index) => (
-                <div key={index} className="relative group">
+                <div key={index} className="relative group" role="listitem">
                   <img
                     src={preview}
-                    alt={`Preview ${index + 1}`}
+                    alt={`Fotografija ${index + 1} od ${photoPreviews.length}`}
                     className="w-full h-20 object-cover rounded-lg"
                   />
                   <button
                     type="button"
                     onClick={() => removePhoto(index)}
                     className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`Ukloni fotografiju ${index + 1}`}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3" aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -299,7 +302,7 @@ export default function ReviewForm({
 
       {/* Video Upload */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2" id="video-upload-label">
           Dodaj video (opciono)
         </label>
         <div className="space-y-3">
@@ -311,9 +314,11 @@ export default function ReviewForm({
               onChange={handleVideoUpload}
               className="hidden"
               disabled={isSubmitting}
+              aria-label="Upload video snimaka za recenziju"
+              aria-describedby="video-upload-label"
             />
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
-              <Video className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors" role="button" tabIndex={0}>
+              <Video className="w-8 h-8 text-gray-400 mx-auto mb-2" aria-hidden="true" />
               <p className="text-sm text-gray-600">
                 Klikni za upload videa (max 2)
               </p>
@@ -321,19 +326,21 @@ export default function ReviewForm({
           </label>
 
           {videoPreviews.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2" role="list" aria-label="Uploadani video snimci">
               {videoPreviews.map((preview, index) => (
-                <div key={index} className="relative group">
+                <div key={index} className="relative group" role="listitem">
                   <video
                     src={preview}
                     className="w-full h-32 object-cover rounded-lg"
+                    aria-label={`Video snimak ${index + 1} od ${videoPreviews.length}`}
                   />
                   <button
                     type="button"
                     onClick={() => removeVideo(index)}
                     className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`Ukloni video snimak ${index + 1}`}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3" aria-hidden="true" />
                   </button>
                 </div>
               ))}
