@@ -124,6 +124,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               icon={<User className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <Input
@@ -134,6 +135,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               icon={<Mail className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <Input
@@ -144,6 +146,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               icon={<Lock className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <Input
@@ -154,6 +157,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               icon={<Lock className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <div>
@@ -164,11 +168,12 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'STUDENT' })}
+                  disabled={loading}
                   className={`p-4 border-2 rounded-lg transition-all ${
                     formData.role === 'STUDENT'
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-300 hover:border-gray-400'
-                  }`}
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">🎓</div>
@@ -178,11 +183,12 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'TUTOR' })}
+                  disabled={loading}
                   className={`p-4 border-2 rounded-lg transition-all ${
                     formData.role === 'TUTOR'
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-300 hover:border-gray-400'
-                  }`}
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">👨‍🏫</div>
@@ -202,6 +208,7 @@ export default function RegisterPage() {
                   setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })
                 }
                 icon={<Gift className="w-5 h-5" />}
+                disabled={loading}
               />
               {formData.referralCode && (
                 <p className="text-xs text-green-600 mt-1">

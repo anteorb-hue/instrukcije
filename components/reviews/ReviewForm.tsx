@@ -38,6 +38,7 @@ export default function ReviewForm({
   const [videos, setVideos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [videoPreviews, setVideoPreviews] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -47,10 +48,36 @@ export default function ReviewForm({
       return
     }
 
-    setPhotos([...photos, ...files])
+    // VALIDATION: File type and size
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+
+    const validFiles: File[] = []
+
+    for (const file of files) {
+      // Validate MIME type
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast.error(`${file.name}: Dozvoljeni su samo JPEG, PNG, WebP i GIF formati`)
+        continue
+      }
+
+      // Validate file size
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`${file.name}: Fotografija ne smije biti veća od 5MB`)
+        continue
+      }
+
+      validFiles.push(file)
+    }
+
+    if (validFiles.length === 0) {
+      return
+    }
+
+    setPhotos([...photos, ...validFiles])
 
     // Create previews
-    files.forEach((file) => {
+    validFiles.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         setPhotoPreviews((prev) => [...prev, reader.result as string])
@@ -67,10 +94,36 @@ export default function ReviewForm({
       return
     }
 
-    setVideos([...videos, ...files])
+    // VALIDATION: File type and size
+    const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+
+    const validFiles: File[] = []
+
+    for (const file of files) {
+      // Validate MIME type
+      if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+        toast.error(`${file.name}: Dozvoljeni su samo MP4, WebM, MOV i AVI formati`)
+        continue
+      }
+
+      // Validate file size
+      if (file.size > MAX_VIDEO_SIZE) {
+        toast.error(`${file.name}: Video ne smije biti veći od 50MB`)
+        continue
+      }
+
+      validFiles.push(file)
+    }
+
+    if (validFiles.length === 0) {
+      return
+    }
+
+    setVideos([...videos, ...validFiles])
 
     // Create previews
-    files.forEach((file) => {
+    validFiles.forEach((file) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         setVideoPreviews((prev) => [...prev, reader.result as string])
@@ -89,8 +142,12 @@ export default function ReviewForm({
     setVideoPreviews(videoPreviews.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isSubmitting) {
+      return // Prevent double submission
+    }
 
     if (rating === 0) {
       toast.error('Molimo odaberite ocjenu')
@@ -112,11 +169,18 @@ export default function ReviewForm({
       videos,
     }
 
-    if (onSubmit) {
-      onSubmit(reviewData)
-    }
+    setIsSubmitting(true)
 
-    toast.success('Recenzija uspješno poslana!')
+    try {
+      if (onSubmit) {
+        await onSubmit(reviewData)
+      }
+      toast.success('Recenzija uspješno poslana!')
+    } catch (error) {
+      toast.error('Greška pri slanju recenzije')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -180,6 +244,7 @@ export default function ReviewForm({
           className="input-field"
           placeholder={`Opišite vaše iskustvo s ${tutorName}...`}
           required
+          disabled={isSubmitting}
         />
         <p className="text-xs text-gray-500 mt-1">
           {comment.length}/1000 znakova
@@ -192,13 +257,14 @@ export default function ReviewForm({
           Dodaj fotografije (opciono)
         </label>
         <div className="space-y-3">
-          <label className="cursor-pointer">
+          <label className={isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}>
             <input
               type="file"
               accept="image/*"
               multiple
               onChange={handlePhotoUpload}
               className="hidden"
+              disabled={isSubmitting}
             />
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
               <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -237,13 +303,14 @@ export default function ReviewForm({
           Dodaj video (opciono)
         </label>
         <div className="space-y-3">
-          <label className="cursor-pointer">
+          <label className={isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}>
             <input
               type="file"
               accept="video/*"
               multiple
               onChange={handleVideoUpload}
               className="hidden"
+              disabled={isSubmitting}
             />
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
               <Video className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -285,11 +352,11 @@ export default function ReviewForm({
 
       {/* Actions */}
       <div className="flex space-x-3">
-        <Button type="submit" variant="primary" className="flex-1">
-          Pošalji recenziju
+        <Button type="submit" variant="primary" className="flex-1" loading={isSubmitting} disabled={isSubmitting}>
+          {isSubmitting ? 'Šaljem...' : 'Pošalji recenziju'}
         </Button>
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1" disabled={isSubmitting}>
             Odustani
           </Button>
         )}

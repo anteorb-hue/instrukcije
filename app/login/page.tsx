@@ -67,6 +67,7 @@ export default function LoginPage() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               icon={<Mail className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <Input
@@ -77,6 +78,7 @@ export default function LoginPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               icon={<Lock className="w-5 h-5" />}
               required
+              disabled={loading}
             />
 
             <div className="flex items-center justify-between">
