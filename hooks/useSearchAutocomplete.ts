@@ -51,15 +51,48 @@ export function useSavedSearches() {
   const [savedSearches, setSavedSearches] = useState<string[]>([])
 
   useEffect(() => {
-    // Load from localStorage
+    // Load from localStorage with safe parsing
     const saved = localStorage.getItem('savedSearches')
     if (saved) {
-      setSavedSearches(JSON.parse(saved))
+      try {
+        const parsed = JSON.parse(saved)
+
+        // Validate that parsed data is an array
+        if (!Array.isArray(parsed)) {
+          console.warn('Invalid savedSearches format, resetting')
+          localStorage.removeItem('savedSearches')
+          return
+        }
+
+        // Sanitize array items - only allow strings, max length
+        const sanitized = parsed
+          .filter((item) => typeof item === 'string')
+          .map((item) => item.trim().slice(0, 200)) // Limit string length
+          .filter((item) => item.length > 0)
+          .slice(0, 10) // Max 10 items
+
+        setSavedSearches(sanitized)
+
+        // Update localStorage with sanitized data if different
+        if (JSON.stringify(parsed) !== JSON.stringify(sanitized)) {
+          localStorage.setItem('savedSearches', JSON.stringify(sanitized))
+        }
+      } catch (error) {
+        console.error('Error parsing savedSearches:', error)
+        localStorage.removeItem('savedSearches')
+      }
     }
   }, [])
 
   const saveSearch = (query: string) => {
-    const updated = [query, ...savedSearches.filter(s => s !== query)].slice(0, 10)
+    // Sanitize input before saving
+    const sanitizedQuery = query.trim().slice(0, 200)
+
+    if (!sanitizedQuery) {
+      return // Don't save empty strings
+    }
+
+    const updated = [sanitizedQuery, ...savedSearches.filter(s => s !== sanitizedQuery)].slice(0, 10)
     setSavedSearches(updated)
     localStorage.setItem('savedSearches', JSON.stringify(updated))
   }

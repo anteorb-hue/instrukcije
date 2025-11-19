@@ -30,6 +30,31 @@ export default function RegisterPage() {
     }
   }, [searchParams])
 
+  // Validate password complexity
+  const validatePassword = (password: string): { valid: boolean; error?: string } => {
+    if (password.length < 8) {
+      return { valid: false, error: 'Lozinka mora imati najmanje 8 znakova' }
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, error: 'Lozinka mora sadržavati barem jedno veliko slovo' }
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return { valid: false, error: 'Lozinka mora sadržavati barem jedno malo slovo' }
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return { valid: false, error: 'Lozinka mora sadržavati barem jednu brojku' }
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return { valid: false, error: 'Lozinka mora sadržavati barem jedan specijalni znak (!@#$%^&* itd.)' }
+    }
+
+    return { valid: true }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -38,8 +63,10 @@ export default function RegisterPage() {
       return
     }
 
-    if (formData.password.length < 8) {
-      toast.error('Lozinka mora imati najmanje 8 znakova')
+    // Validate password complexity
+    const passwordValidation = validatePassword(formData.password)
+    if (!passwordValidation.valid) {
+      toast.error(passwordValidation.error!)
       return
     }
 

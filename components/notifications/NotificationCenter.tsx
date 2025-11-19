@@ -81,6 +81,43 @@ export default function NotificationCenter() {
     }
   }
 
+  // Safe JSON parsing to prevent XSS attacks
+  const safeJSONParse = (jsonString: string | null): any => {
+    if (!jsonString) return null
+
+    try {
+      const parsed = JSON.parse(jsonString)
+
+      // Validate that parsed data is an object
+      if (!parsed || typeof parsed !== 'object') {
+        console.warn('Invalid notification data structure')
+        return null
+      }
+
+      // Sanitize fields to prevent XSS
+      const sanitized: any = {}
+      for (const key in parsed) {
+        if (parsed.hasOwnProperty(key)) {
+          const value = parsed[key]
+          // Only allow primitive types and arrays
+          if (
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'boolean' ||
+            Array.isArray(value)
+          ) {
+            sanitized[key] = value
+          }
+        }
+      }
+
+      return sanitized
+    } catch (error) {
+      console.error('Error parsing notification data:', error)
+      return null
+    }
+  }
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'booking_received':
@@ -116,7 +153,8 @@ export default function NotificationCenter() {
 
     // Navigate based on type
     try {
-      const data = notification.data ? JSON.parse(notification.data) : null
+      // Use safe parsing to prevent XSS
+      const data = safeJSONParse(notification.data)
 
       switch (notification.type) {
         case 'booking_received':
