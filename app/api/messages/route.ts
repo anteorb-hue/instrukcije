@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createMessageSchema, safeValidateRequest } from '@/lib/validation-schemas'
+import { checkRateLimit, RateLimitPresets } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +13,30 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Neautorizirano' },
         { status: 401 }
+      )
+    }
+
+    // RATE LIMITING: Prevent message spam (20 messages per minute)
+    const rateLimitResult = checkRateLimit(
+      `messages:${session.user.id}`,
+      RateLimitPresets.MESSAGES
+    )
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Previše zahtjeva. Molimo pričekajte prije slanja nove poruke.',
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': RateLimitPresets.MESSAGES.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+          },
+        }
       )
     }
 
