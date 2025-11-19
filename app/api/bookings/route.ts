@@ -17,6 +17,21 @@ export async function POST(req: Request) {
 
     const { tutorId, subjectId, scheduledAt, duration, videoProvider, notes } = await req.json()
 
+    // VALIDATION: Duration must be between 15 minutes and 8 hours (480 min)
+    if (!duration || typeof duration !== 'number') {
+      return NextResponse.json(
+        { error: 'Duration is required and must be a number' },
+        { status: 400 }
+      )
+    }
+
+    if (duration < 15 || duration > 480) {
+      return NextResponse.json(
+        { error: 'Duration must be between 15 and 480 minutes' },
+        { status: 400 }
+      )
+    }
+
     // Get tutor details
     const tutor = await prisma.user.findUnique({
       where: { id: tutorId },
@@ -32,6 +47,15 @@ export async function POST(req: Request) {
       )
     }
 
+    // VALIDATION: Hourly rate must be positive and reasonable
+    const hourlyRate = tutor.tutorProfile.hourlyRate
+    if (hourlyRate <= 0 || hourlyRate > 1000) {
+      return NextResponse.json(
+        { error: 'Invalid tutor hourly rate' },
+        { status: 400 }
+      )
+    }
+
     // Create video meeting
     const meeting = await createMeeting(videoProvider, {
       topic: `Instrukcija - ${session.user.name}`,
@@ -41,8 +65,17 @@ export async function POST(req: Request) {
       studentEmail: session.user.email!,
     })
 
-    // Calculate price
-    const price = tutor.tutorProfile.hourlyRate * (duration / 60)
+    // PRICE CALCULATION: Always calculate server-side, never trust client
+    // Round to 2 decimal places to prevent floating point issues
+    const price = Math.round(hourlyRate * (duration / 60) * 100) / 100
+
+    // VALIDATION: Final price check
+    if (price <= 0 || price > 10000) {
+      return NextResponse.json(
+        { error: 'Calculated price is invalid' },
+        { status: 400 }
+      )
+    }
 
     // Create booking
     const booking = await prisma.booking.create({

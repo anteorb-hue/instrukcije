@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET /api/homework/answers/[id] - Get single answer
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -53,6 +55,33 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 // PUT /api/homework/answers/[id] - Update answer
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    // Check ownership
+    const existingAnswer = await prisma.homeworkAnswer.findUnique({
+      where: { id: params.id },
+      select: { authorId: true },
+    })
+
+    if (!existingAnswer) {
+      return NextResponse.json({ error: 'Answer not found' }, { status: 404 })
+    }
+
+    // Only the author or admin can update
+    if (existingAnswer.authorId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only update your own answers' },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const { content, attachments } = body
 
@@ -82,9 +111,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // DELETE /api/homework/answers/[id] - Delete answer
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
     const answer = await prisma.homeworkAnswer.findUnique({
       where: { id: params.id },
-      include: {
+      select: {
+        authorId: true,
+        questionId: true,
         question: {
           select: {
             acceptedAnswerId: true,
@@ -95,6 +135,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     if (!answer) {
       return NextResponse.json({ error: 'Answer not found' }, { status: 404 })
+    }
+
+    // Only the author or admin can delete
+    if (answer.authorId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only delete your own answers' },
+        { status: 403 }
+      )
     }
 
     // If this is the accepted answer, remove it from question

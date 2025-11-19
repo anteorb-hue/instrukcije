@@ -1,33 +1,33 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // POST /api/tests/[id]/start - Start a test (create submission)
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await req.json()
-    const { studentId } = body
-
-    if (!studentId) {
+    // Require authentication to prevent unauthorized test access
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'Student ID is required' },
-        { status: 400 }
+        { error: 'Unauthorized - Please log in to start test' },
+        { status: 401 }
       )
     }
+
+    // Use authenticated user ID from session (not from request body!)
+    const studentId = session.user.id
 
     // Check if test exists and is active
     const test = await prisma.test.findUnique({
       where: { id: params.id },
       include: {
+        tutor: {
+          select: { id: true },
+        },
         questions: {
           include: {
             question: true,
-          },
-        },
-        _count: {
-          select: {
-            submissions: {
-              where: { studentId },
-            },
           },
         },
       },
@@ -41,30 +41,40 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Test is not active' }, { status: 400 })
     }
 
-    // Check if student has exceeded max attempts
-    if (test.maxAttempts) {
-      const previousAttempts = await prisma.testSubmission.count({
-        where: {
-          testId: params.id,
-          studentId,
-        },
-      })
+    // ACCESS CONTROL: Check if user has permission to access this test
+    // Public tests are accessible to everyone
+    // Private tests are only accessible to the tutor who created them or admins
+    if (!test.isPublic) {
+      const hasAccess =
+        test.tutor.id === session.user.id ||
+        session.user.role === 'ADMIN'
 
-      if (previousAttempts >= test.maxAttempts) {
+      if (!hasAccess) {
         return NextResponse.json(
-          { error: 'Maximum attempts exceeded' },
-          { status: 400 }
+          { error: 'Forbidden - This test is private' },
+          { status: 403 }
         )
       }
     }
 
-    // Get the attempt number
-    const attemptNumber = await prisma.testSubmission.count({
+    // FIX RACE CONDITION: Use a single query to get attempt count
+    // This prevents race condition between checking and creating submission
+    const previousAttempts = await prisma.testSubmission.count({
       where: {
         testId: params.id,
         studentId,
       },
-    }) + 1
+    })
+
+    // Check if student has exceeded max attempts
+    if (test.maxAttempts && previousAttempts >= test.maxAttempts) {
+      return NextResponse.json(
+        { error: `Maximum attempts exceeded (${test.maxAttempts} allowed)` },
+        { status: 400 }
+      )
+    }
+
+    const attemptNumber = previousAttempts + 1
 
     // Get client IP and user agent
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip')

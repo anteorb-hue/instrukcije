@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET /api/tests/[id] - Get single test with questions
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -58,6 +60,33 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 // PUT /api/tests/[id] - Update test
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    // Check ownership
+    const existingTest = await prisma.test.findUnique({
+      where: { id: params.id },
+      select: { tutorId: true },
+    })
+
+    if (!existingTest) {
+      return NextResponse.json({ error: 'Test not found' }, { status: 404 })
+    }
+
+    // Only the tutor who created it or admin can update
+    if (existingTest.tutorId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only update your own tests' },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const {
       title,
@@ -145,10 +174,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // DELETE /api/tests/[id] - Delete test
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
-    // Check if test exists
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    // Check if test exists and get ownership info
     const test = await prisma.test.findUnique({
       where: { id: params.id },
-      include: {
+      select: {
+        tutorId: true,
         _count: {
           select: {
             submissions: true,
@@ -161,13 +200,21 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ error: 'Test not found' }, { status: 404 })
     }
 
-    // Optional: Prevent deletion if there are submissions
-    // if (test._count.submissions > 0) {
-    //   return NextResponse.json(
-    //     { error: 'Cannot delete test with existing submissions' },
-    //     { status: 400 }
-    //   )
-    // }
+    // Only the tutor who created it or admin can delete
+    if (test.tutorId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only delete your own tests' },
+        { status: 403 }
+      )
+    }
+
+    // Prevent deletion if there are submissions (data integrity protection)
+    if (test._count.submissions > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete test with existing submissions. Consider deactivating it instead.' },
+        { status: 400 }
+      )
+    }
 
     await prisma.test.delete({
       where: { id: params.id },

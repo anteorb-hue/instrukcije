@@ -19,6 +19,10 @@ export async function GET(req: Request) {
     const availableOnline = searchParams.get('availableOnline')
     const availableInPerson = searchParams.get('availableInPerson')
 
+    // PAGINATION: Prevent memory exhaustion by limiting results
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100) // Max 100 per page
+    const offset = parseInt(searchParams.get('offset') || '0')
+
     // Calculate dayOfWeek from date (0-6, Sunday-Saturday)
     let dayOfWeek: number | undefined
     if (availableDate) {
@@ -26,73 +30,82 @@ export async function GET(req: Request) {
       dayOfWeek = date.getDay()
     }
 
-    const tutors = await prisma.user.findMany({
-      where: {
-        role: 'TUTOR',
-        tutorProfile: {
-          verified: true,
-          ...(priceMin || priceMax ? {
-            hourlyRate: {
-              ...(priceMin ? { gte: priceMin } : {}),
-              ...(priceMax ? { lte: priceMax } : {}),
-            },
-          } : {}),
-          ...(rating ? {
-            averageRating: {
-              gte: rating,
-            },
-          } : {}),
-          ...(educationLevel ? {
-            educationLevels: {
-              has: educationLevel,
-            },
-          } : {}),
-          ...(city ? {
-            city: city,
-          } : {}),
-          ...(videoProvider ? {
-            videoProviders: {
-              has: videoProvider as any,
-            },
-          } : {}),
-          ...(availableOnline === 'true' ? {
-            availableOnline: true,
-          } : {}),
-          ...(availableInPerson === 'true' ? {
-            availableInPerson: true,
-          } : {}),
-        },
-        ...(tier ? {
-          userPoints: {
-            currentTier: tier as any,
+    // Build where clause
+    const whereClause = {
+      role: 'TUTOR' as any,
+      tutorProfile: {
+        verified: true,
+        ...(priceMin || priceMax ? {
+          hourlyRate: {
+            ...(priceMin ? { gte: priceMin } : {}),
+            ...(priceMax ? { lte: priceMax } : {}),
           },
         } : {}),
-        ...(query ? {
-          OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { bio: { contains: query, mode: 'insensitive' } },
-          ],
+        ...(rating ? {
+          averageRating: {
+            gte: rating,
+          },
+        } : {}),
+        ...(educationLevel ? {
+          educationLevels: {
+            has: educationLevel,
+          },
+        } : {}),
+        ...(city ? {
+          city: city,
+        } : {}),
+        ...(videoProvider ? {
+          videoProviders: {
+            has: videoProvider as any,
+          },
+        } : {}),
+        ...(availableOnline === 'true' ? {
+          availableOnline: true,
+        } : {}),
+        ...(availableInPerson === 'true' ? {
+          availableInPerson: true,
         } : {}),
       },
-      include: {
-        tutorProfile: {
-          include: {
-            subjects: {
-              include: {
-                subject: true,
+      ...(tier ? {
+        userPoints: {
+          currentTier: tier as any,
+        },
+      } : {}),
+      ...(query ? {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { bio: { contains: query, mode: 'insensitive' } },
+        ],
+      } : {}),
+    }
+
+    // PAGINATION: Execute count and findMany in parallel for better performance
+    const [tutors, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        include: {
+          tutorProfile: {
+            include: {
+              subjects: {
+                include: {
+                  subject: true,
+                },
               },
+              availability: true,
             },
-            availability: true,
+          },
+          userPoints: true,
+        },
+        orderBy: {
+          tutorProfile: {
+            averageRating: 'desc',
           },
         },
-        userPoints: true,
-      },
-      orderBy: {
-        tutorProfile: {
-          averageRating: 'desc',
-        },
-      },
-    })
+        skip: offset,
+        take: limit,
+      }),
+      prisma.user.count({ where: whereClause }),
+    ])
 
     // Filter by subject if provided
     let filteredTutors = subject
@@ -125,7 +138,16 @@ export async function GET(req: Request) {
       })
     }
 
-    return NextResponse.json(filteredTutors)
+    // Return with pagination metadata
+    return NextResponse.json({
+      tutors: filteredTutors,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    })
   } catch (error) {
     console.error('Error fetching tutors:', error)
     return NextResponse.json(

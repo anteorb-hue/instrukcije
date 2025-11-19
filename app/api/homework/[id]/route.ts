@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET /api/homework/[id] - Get single homework question
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -95,6 +97,36 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 // PUT /api/homework/[id] - Update homework question
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    // Check ownership
+    const existingQuestion = await prisma.homeworkQuestion.findUnique({
+      where: { id: params.id },
+      select: { studentId: true },
+    })
+
+    if (!existingQuestion) {
+      return NextResponse.json(
+        { error: 'Homework question not found' },
+        { status: 404 }
+      )
+    }
+
+    // Only the student who created it or admin can update
+    if (existingQuestion.studentId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only update your own questions' },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const {
       title,
@@ -143,14 +175,32 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // DELETE /api/homework/[id] - Delete homework question
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
     const question = await prisma.homeworkQuestion.findUnique({
       where: { id: params.id },
+      select: { studentId: true },
     })
 
     if (!question) {
       return NextResponse.json(
         { error: 'Homework question not found' },
         { status: 404 }
+      )
+    }
+
+    // Only the student who created it or admin can delete
+    if (question.studentId !== session.user.id && session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - You can only delete your own questions' },
+        { status: 403 }
       )
     }
 
