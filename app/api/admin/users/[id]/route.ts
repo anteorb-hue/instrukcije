@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAdmin } from '@/lib/auth-middleware'
 import { auditHelpers } from '@/lib/audit-logger'
+import { updateUserSchema, safeValidateRequest } from '@/lib/validation-schemas'
 
 // GET /api/admin/users/[id] - Get single user (Admin only)
 export const GET = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
@@ -99,7 +100,23 @@ export const GET = withAdmin(async (req: NextRequest, session, { params }: { par
 export const PUT = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
   try {
     const body = await req.json()
-    const { role, name, email, phone, bio, avatar } = body
+
+    // INPUT VALIDATION: Use Zod schema to validate request body
+    const validation = safeValidateRequest(updateUserSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validation.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          }))
+        },
+        { status: 400 }
+      )
+    }
+
+    const { role, name, email, phone, bio, avatar } = validation.data
 
     // Get old user data for audit log
     const oldUser = await prisma.user.findUnique({
@@ -157,13 +174,19 @@ export const DELETE = withAdmin(async (req: NextRequest, session, { params }: { 
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Optional: Prevent deletion if user has bookings
-    // if (user._count.bookingsAsStudent > 0 || user._count.bookingsAsTutor > 0) {
-    //   return NextResponse.json(
-    //     { error: 'Cannot delete user with existing bookings' },
-    //     { status: 400 }
-    //   )
-    // }
+    // DATA INTEGRITY: Prevent deletion if user has bookings to preserve historical data
+    if (user._count.bookingsAsStudent > 0 || user._count.bookingsAsTutor > 0) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete user with existing bookings. Consider deactivating the account instead.',
+          bookings: {
+            asStudent: user._count.bookingsAsStudent,
+            asTutor: user._count.bookingsAsTutor,
+          },
+        },
+        { status: 400 }
+      )
+    }
 
     await prisma.user.delete({
       where: { id: params.id },

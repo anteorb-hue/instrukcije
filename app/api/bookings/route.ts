@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createMeeting } from '@/lib/video-providers'
+import { createBookingSchema, safeValidateRequest } from '@/lib/validation-schemas'
 
 export async function POST(req: Request) {
   try {
@@ -15,22 +16,24 @@ export async function POST(req: Request) {
       )
     }
 
-    const { tutorId, subjectId, scheduledAt, duration, videoProvider, notes } = await req.json()
+    const body = await req.json()
 
-    // VALIDATION: Duration must be between 15 minutes and 8 hours (480 min)
-    if (!duration || typeof duration !== 'number') {
+    // INPUT VALIDATION: Use Zod schema to validate request body
+    const validation = safeValidateRequest(createBookingSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Duration is required and must be a number' },
+        {
+          error: 'Validation failed',
+          details: validation.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          }))
+        },
         { status: 400 }
       )
     }
 
-    if (duration < 15 || duration > 480) {
-      return NextResponse.json(
-        { error: 'Duration must be between 15 and 480 minutes' },
-        { status: 400 }
-      )
-    }
+    const { tutorId, subjectId, scheduledAt, duration, videoProvider, notes } = validation.data
 
     // Get tutor details
     const tutor = await prisma.user.findUnique({

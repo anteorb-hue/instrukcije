@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email'
 import { homeworkQuestionListingSelect, getPagination } from '@/lib/query-optimization'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { createHomeworkSchema, safeValidateRequest } from '@/lib/validation-schemas'
 
 // GET /api/homework - List all homework questions
 export async function GET(req: Request) {
@@ -82,6 +83,22 @@ export async function POST(req: Request) {
     const studentId = session.user.id
 
     const body = await req.json()
+
+    // INPUT VALIDATION: Use Zod schema to validate request body
+    const validation = safeValidateRequest(createHomeworkSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validation.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          }))
+        },
+        { status: 400 }
+      )
+    }
+
     const {
       title,
       description,
@@ -90,14 +107,7 @@ export async function POST(req: Request) {
       educationLevel,
       tags,
       assignedTutorId,
-    } = body
-
-    if (!title || !description) {
-      return NextResponse.json(
-        { error: 'Title and description are required' },
-        { status: 400 }
-      )
-    }
+    } = validation.data
 
     const question = await prisma.homeworkQuestion.create({
       data: {

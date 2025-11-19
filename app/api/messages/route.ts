@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createMessageSchema, safeValidateRequest } from '@/lib/validation-schemas'
 
 export async function POST(req: Request) {
   try {
@@ -14,14 +15,24 @@ export async function POST(req: Request) {
       )
     }
 
-    const { receiverId, content, attachmentUrl } = await req.json()
+    const body = await req.json()
 
-    if (!receiverId || !content) {
+    // INPUT VALIDATION: Use Zod schema to validate request body
+    const validation = safeValidateRequest(createMessageSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'receiverId i content su obavezni' },
+        {
+          error: 'Validation failed',
+          details: validation.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          }))
+        },
         { status: 400 }
       )
     }
+
+    const { receiverId, content, attachmentUrl } = validation.data
 
     const message = await prisma.message.create({
       data: {
