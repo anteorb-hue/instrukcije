@@ -76,6 +76,7 @@ model User {
   payments          Payment[]
   notifications     Notification[]
   favorites         Favorite[]
+  favoritedBy       Favorite[]    @relation("FavoritedTutors")
   userPoints        UserPoints?
   childrenAsParent  ParentChild[] @relation("ParentChildren")
   parentLinks       ParentChild[] @relation("ChildParent")
@@ -324,13 +325,13 @@ model Review {
   reviewedId      String
   reviewed        User     @relation("ReviewsReceived", fields: [reviewedId], references: [id])
 
-  rating          Int      // 1-5
+  rating          Int      @db.SmallInt // 1-5 (CHECK constraint enforced via migration)
   comment         String?  @db.Text
 
   // Tutor-specific ratings
-  communication   Int?     // 1-5
-  expertise       Int?     // 1-5
-  punctuality     Int?     // 1-5
+  communication   Int?     @db.SmallInt // 1-5 (CHECK constraint enforced via migration)
+  expertise       Int?     @db.SmallInt // 1-5 (CHECK constraint enforced via migration)
+  punctuality     Int?     @db.SmallInt // 1-5 (CHECK constraint enforced via migration)
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -384,11 +385,13 @@ model Favorite {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tutorId   String
+  tutor     User     @relation("FavoritedTutors", fields: [tutorId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@unique([userId, tutorId])
   @@map("favorites")
+  @@index([tutorId])
 }
 
 // Rewards & Points System
