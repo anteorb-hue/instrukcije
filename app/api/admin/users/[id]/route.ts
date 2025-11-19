@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withAdmin } from '@/lib/auth-middleware'
+import { auditHelpers } from '@/lib/audit-logger'
 
 // GET /api/admin/users/[id] - Get single user (Admin only)
 export const GET = withAdmin(async (req: NextRequest, session, { params }: { params: { id: string } }) => {
@@ -100,6 +101,12 @@ export const PUT = withAdmin(async (req: NextRequest, session, { params }: { par
     const body = await req.json()
     const { role, name, email, phone, bio, avatar } = body
 
+    // Get old user data for audit log
+    const oldUser = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: { role: true, name: true, email: true },
+    })
+
     const user = await prisma.user.update({
       where: { id: params.id },
       data: {
@@ -111,6 +118,14 @@ export const PUT = withAdmin(async (req: NextRequest, session, { params }: { par
         ...(avatar !== undefined && { avatar }),
       },
     })
+
+    // Audit log the update
+    await auditHelpers.userUpdated(params.id, session.user, body)
+
+    // Audit log role change separately if role changed
+    if (role && oldUser && oldUser.role !== role) {
+      await auditHelpers.userRoleChanged(params.id, oldUser.role, role, session.user)
+    }
 
     return NextResponse.json(user)
   } catch (error: any) {
@@ -153,6 +168,9 @@ export const DELETE = withAdmin(async (req: NextRequest, session, { params }: { 
     await prisma.user.delete({
       where: { id: params.id },
     })
+
+    // Audit log the deletion
+    await auditHelpers.userDeleted(params.id, user.email, session.user)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
