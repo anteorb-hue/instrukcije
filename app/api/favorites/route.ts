@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // Get user's favorites
 export async function GET(req: Request) {
   try {
-    // TODO: Get userId from session/auth
-    const userId = 'mock-user-id' // Replace with actual auth
+    // Get authenticated user from session
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
 
     const favorites = await prisma.favorite.findMany({
       where: {
@@ -42,10 +53,18 @@ export async function GET(req: Request) {
 // Add to favorites
 export async function POST(req: Request) {
   try {
-    const { tutorId } = await req.json()
+    // Get authenticated user from session
+    const session = await getServerSession(authOptions)
 
-    // TODO: Get userId from session/auth
-    const userId = 'mock-user-id' // Replace with actual auth
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
+    const { tutorId } = await req.json()
 
     if (!tutorId) {
       return NextResponse.json(
@@ -91,11 +110,19 @@ export async function POST(req: Request) {
 // Remove from favorites
 export async function DELETE(req: Request) {
   try {
+    // Get authenticated user from session
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
     const { searchParams } = new URL(req.url)
     const tutorId = searchParams.get('tutorId')
-
-    // TODO: Get userId from session/auth
-    const userId = 'mock-user-id' // Replace with actual auth
 
     if (!tutorId) {
       return NextResponse.json(

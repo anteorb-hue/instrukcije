@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // POST /api/homework/[id]/view - Track view
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication to prevent bot spam
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
     // Increment view count
     await prisma.homeworkQuestion.update({
       where: { id: params.id },

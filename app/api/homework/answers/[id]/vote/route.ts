@@ -1,16 +1,31 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // POST /api/homework/answers/[id]/vote - Vote on answer (upvote/downvote)
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Require authentication to prevent vote manipulation
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in to vote' },
+        { status: 401 }
+      )
+    }
+
+    // Use authenticated user ID from session (not from request body!)
+    const userId = session.user.id
+
     const body = await req.json()
-    const { userId, vote } = body
+    const { vote } = body
     // vote: 1 for upvote, -1 for downvote
 
-    if (!userId || (vote !== 1 && vote !== -1)) {
+    if (vote !== 1 && vote !== -1) {
       return NextResponse.json(
-        { error: 'User ID and vote (1 or -1) are required' },
+        { error: 'Vote must be 1 (upvote) or -1 (downvote)' },
         { status: 400 }
       )
     }
@@ -99,12 +114,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 // DELETE /api/homework/answers/[id]/vote - Remove vote
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get('userId')
+    // Require authentication
+    const session = await getServerSession(authOptions)
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
     }
+
+    // Use authenticated user ID from session (not from query params!)
+    const userId = session.user.id
 
     const existingVote = await prisma.answerVote.findUnique({
       where: {

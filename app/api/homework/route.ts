@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { homeworkQuestionListingSelect, getPagination } from '@/lib/query-optimization'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET /api/homework - List all homework questions
 export async function GET(req: Request) {
@@ -66,9 +68,21 @@ export async function GET(req: Request) {
 // POST /api/homework - Create new homework question
 export async function POST(req: Request) {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in to create homework question' },
+        { status: 401 }
+      )
+    }
+
+    // Use authenticated user ID as studentId
+    const studentId = session.user.id
+
     const body = await req.json()
     const {
-      studentId,
       title,
       description,
       attachments,
@@ -78,9 +92,9 @@ export async function POST(req: Request) {
       assignedTutorId,
     } = body
 
-    if (!studentId || !title || !description) {
+    if (!title || !description) {
       return NextResponse.json(
-        { error: 'Student ID, title, and description are required' },
+        { error: 'Title and description are required' },
         { status: 400 }
       )
     }

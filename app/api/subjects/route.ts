@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withAdmin } from '@/lib/auth-middleware'
 
 // GET /api/subjects - List all subjects
 export async function GET(req: Request) {
@@ -42,7 +43,7 @@ export async function GET(req: Request) {
 }
 
 // POST /api/subjects - Create new subject (Admin only)
-export async function POST(req: Request) {
+export const POST = withAdmin(async (req: NextRequest) => {
   try {
     const body = await req.json()
     const { name, nameEn, description, icon, category } = body
@@ -78,4 +79,4 @@ export async function POST(req: Request) {
     console.error('Error creating subject:', error)
     return NextResponse.json({ error: 'Failed to create subject' }, { status: 500 })
   }
-}
+})

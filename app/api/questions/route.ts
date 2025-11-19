@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withTutor } from '@/lib/auth-middleware'
 
 // GET /api/questions - List all questions (Question Bank)
 export async function GET(req: Request) {
@@ -78,12 +79,14 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/questions - Create new question
-export async function POST(req: Request) {
+// POST /api/questions - Create new question (Tutor only)
+export const POST = withTutor(async (req: NextRequest, session) => {
   try {
+    // Use authenticated tutor ID from session
+    const tutorId = session.user.id
+
     const body = await req.json()
     const {
-      tutorId,
       questionText,
       type,
       points,
@@ -96,9 +99,9 @@ export async function POST(req: Request) {
       tags,
     } = body
 
-    if (!tutorId || !questionText || !type) {
+    if (!questionText || !type) {
       return NextResponse.json(
-        { error: 'Tutor ID, question text, and type are required' },
+        { error: 'Question text and type are required' },
         { status: 400 }
       )
     }
@@ -163,4 +166,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-}
+})
