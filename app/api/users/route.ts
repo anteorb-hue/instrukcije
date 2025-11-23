@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
 
@@ -40,6 +40,7 @@ export async function GET(req: Request) {
     }
 
     // Remove sensitive data
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user
 
     return NextResponse.json(userWithoutPassword)
@@ -109,7 +110,8 @@ export async function PUT(req: Request) {
       })
     }
 
-    const { password: _, ...userWithoutPassword } = user
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user
 
     return NextResponse.json(userWithoutPassword)
   } catch (error) {

@@ -26,7 +26,7 @@ export default function ContactPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
       toast.success('Poruka uspješno poslana! Odgovorit ćemo uskoro.')
       setFormData({ name: '', email: '', subject: '', message: '' })
-    } catch (error) {
+    } catch {
       toast.error('Greška pri slanju poruke')
     } finally {
       setLoading(false)

@@ -72,7 +72,7 @@ export default function EditProfilePage() {
     try {
       // API call to update profile
       toast.success('Profil uspješno ažuriran!')
-    } catch (error) {
+    } catch {
       toast.error('Greška pri ažuriranju profila')
     }
   }

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Search, Video, Calendar, Star, Shield, Award, Users, TrendingUp, BookOpen, Clock, CheckCircle } from 'lucide-react'
+import { Search, Video, Calendar, Star, Shield, Award, Users, TrendingUp } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 

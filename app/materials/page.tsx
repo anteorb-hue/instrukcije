@@ -19,7 +19,6 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Input from '@/components/ui/Input'
-import { formatFileSize } from '@/lib/utils'
 
 export default function MaterialsPage() {
   const [searchQuery, setSearchQuery] = useState('')

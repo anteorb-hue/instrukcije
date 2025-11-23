@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ChevronLeft, ChevronRight, RotateCcw, Plus, Edit, Trash2, Check, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RotateCcw, Plus, Check, X } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
-import Input from '@/components/ui/Input'
+
 import toast from 'react-hot-toast'
 
 interface Flashcard {
@@ -130,6 +130,7 @@ export default function FlashcardsPage() {
     new: flashcards.filter((c) => c.correct === 0).length,
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':

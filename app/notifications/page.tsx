@@ -36,7 +36,7 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')

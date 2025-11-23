@@ -4,22 +4,17 @@ import React, { useState } from 'react'
 import {
   ArrowUp,
   ArrowDown,
-  MessageSquare,
   CheckCircle2,
   Award,
   Clock,
   Eye,
   Share2,
   Flag,
-  Edit,
-  Trash2,
   Bookmark,
-  Tag,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
-import StarRating from '@/components/reviews/StarRating'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -45,7 +40,6 @@ interface ThreadDetailPageProps {
 
 export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
   const [newReply, setNewReply] = useState('')
-  const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const router = useRouter()
 
   // Mock data
@@ -144,10 +138,12 @@ Nadam se da pomaže!`,
     },
   ]
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleVote = (type: 'up' | 'down', targetType: 'thread' | 'reply', id?: string) => {
     toast.success(type === 'up' ? 'Upvotano' : 'Downvotano')
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAcceptAnswer = (replyId: string) => {
     toast.success('Odgovor označen kao najbolji!')
   }

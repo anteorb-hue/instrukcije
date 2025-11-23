@@ -45,7 +45,7 @@ export default function AvailabilityPage() {
     try {
       // API call to save availability
       toast.success('Dostupnost uspješno ažurirana!')
-    } catch (error) {
+    } catch {
       toast.error('Greška pri ažuriranju dostupnosti')
     }
   }

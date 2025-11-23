@@ -327,8 +327,8 @@ export default function CertificateDetailPage({ params }: CertificateDetailProps
                   1
                 </div>
                 <span>
-                  <strong>Dodaj na LinkedIn:</strong> Klikni "Podijeli" i objavi na svom LinkedIn
-                  profilu pod "Licenses & Certifications"
+                  <strong>Dodaj na LinkedIn:</strong> Klikni &quot;Podijeli&quot; i objavi na svom LinkedIn
+                  profilu pod &quot;Licenses & Certifications&quot;
                 </span>
               </li>
               <li className="flex items-start">

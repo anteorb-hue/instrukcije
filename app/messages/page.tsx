@@ -92,6 +92,7 @@ export default function MessagesPage() {
     if (status === 'authenticated') {
       fetchMessages()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
   // Auto-scroll to bottom when messages change
@@ -263,6 +264,7 @@ export default function MessagesPage() {
     if (selectedUserId) {
       markAsRead(selectedUserId)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUserId])
 
   // ===== WebRTC Call Functions =====

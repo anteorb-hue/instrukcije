@@ -78,7 +78,7 @@ interface Payment {
 }
 
 export default function ParentPortalPage() {
-  const router = useRouter()
+  // const router = useRouter()
   const [selectedChild, setSelectedChild] = useState<string>('child-1')
   const [activeTab, setActiveTab] = useState<'overview' | 'lessons' | 'payments' | 'settings'>('overview')
 

@@ -36,7 +36,7 @@ export default function LoginPage() {
         router.push('/')
         router.refresh()
       }
-    } catch (error) {
+    } catch {
       toast.error('Došlo je do greške')
     } finally {
       setLoading(false)

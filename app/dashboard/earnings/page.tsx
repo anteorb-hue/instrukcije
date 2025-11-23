@@ -10,7 +10,6 @@ import { Line } from 'recharts'
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function EarningsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('thisMonth')
 
   // Mock data
   const stats = {

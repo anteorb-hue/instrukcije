@@ -53,7 +53,7 @@ interface Reward {
 
 export default function ReferralsPage() {
   const [linkCopied, setLinkCopied] = useState(false)
-  const [showShareModal, setShowShareModal] = useState(false)
+  // const [showShareModal, setShowShareModal] = useState(false)
 
   const referralCode = 'ANTE2025'
   const referralLink = `https://instrukcije.hr/register?ref=${referralCode}`

@@ -30,6 +30,7 @@ export async function GET(
     }
 
     // Remove sensitive data
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, email, phone, ...publicUser } = user
 
     return NextResponse.json(publicUser)

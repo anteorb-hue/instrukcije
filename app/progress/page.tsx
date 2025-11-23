@@ -16,7 +16,7 @@ import {
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
-import { Line, Bar, Radar } from 'recharts'
+import { Bar, Radar } from 'recharts'
 import {
   LineChart,
   BarChart,
@@ -33,7 +33,6 @@ import {
 } from 'recharts'
 
 export default function ProgressPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('month')
 
   // Mock data
   const stats = {

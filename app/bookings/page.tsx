@@ -10,23 +10,17 @@ import {
   Clock,
   User,
   Video,
-  MapPin,
-  Edit,
   Trash2,
   Download,
   ExternalLink,
   Search,
-  Filter,
   ChevronDown,
   ChevronUp,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  MoreVertical,
   RefreshCw,
   FileText,
   Star,
-  MessageSquare,
   Loader2,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
@@ -66,7 +60,7 @@ interface Booking {
 }
 
 export default function BookingsPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')

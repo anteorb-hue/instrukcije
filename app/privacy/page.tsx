@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Uvod</h2>
             <p className="text-gray-700 leading-relaxed">
-              Instrukcije.hr ("mi", "naš") posvećeni smo zaštiti vaše privatnosti. Ova Politika
+              Instrukcije.hr (&quot;mi&quot;, &quot;naš&quot;) posvećeni smo zaštiti vaše privatnosti. Ova Politika
               privatnosti objašnjava kako prikupljamo, koristimo, dijelimo i štitimo vaše osobne
               podatke u skladu sa GDPR (General Data Protection Regulation) i hrvatskim zakonima o
               zaštiti podataka.
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Pravo na pristup podacima</li>
               <li>Pravo na ispravak podataka</li>
-              <li>Pravo na brisanje podataka ("pravo na zaborav")</li>
+              <li>Pravo na brisanje podataka (&quot;pravo na zaborav&quot;)</li>
               <li>Pravo na ograničenje obrade</li>
               <li>Pravo na prenosivost podataka</li>
               <li>Pravo na prigovor</li>

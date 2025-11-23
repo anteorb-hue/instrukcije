@@ -142,6 +142,7 @@ export default function ParentPortalPage() {
     if (status === 'authenticated') {
       fetchDashboardData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session, router])
 
   const fetchDashboardData = async () => {
