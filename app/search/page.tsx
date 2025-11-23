@@ -8,7 +8,6 @@ import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import {
   Search,
-  Filter,
   X,
   Star,
   MapPin,
@@ -18,10 +17,7 @@ import {
   BookOpen,
   Users,
   Award,
-  TrendingUp,
   SlidersHorizontal,
-  ArrowUpDown,
-  ChevronDown,
   CheckCircle,
   Video,
   Home,

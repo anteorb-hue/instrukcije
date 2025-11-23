@@ -11,8 +11,6 @@ import {
   Star,
   Bookmark,
   Search,
-  Image as ImageIcon,
-  FileText,
   Zap,
   User,
   ThumbsUp,

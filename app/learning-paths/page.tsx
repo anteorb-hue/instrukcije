@@ -9,7 +9,6 @@ import {
   Users,
   Star,
   CheckCircle,
-  Lock,
   Play,
   Target,
   Zap,

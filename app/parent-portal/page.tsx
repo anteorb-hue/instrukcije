@@ -12,8 +12,6 @@ import {
   BookOpen,
   Plus,
   Star,
-  Shield,
-  Bell,
   Award,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'

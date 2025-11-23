@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Bell, Lock, Globe, Shield, Mail } from 'lucide-react'
+import { Bell, Lock, Globe, Shield } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -40,7 +40,7 @@ export default function SettingsPage() {
       // API call
       toast.success('Lozinka uspješno promijenjena!')
       setPasswords({ current: '', new: '', confirm: '' })
-    } catch (error) {
+    } catch {
       toast.error('Greška pri promjeni lozinke')
     }
   }
