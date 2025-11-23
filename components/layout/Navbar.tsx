@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { Menu, X, Search, Bell, User, LogOut, BookOpen, MessageSquare, Calendar, Award } from 'lucide-react'
+import { Menu, X, User, LogOut, BookOpen, MessageSquare, Calendar, Award } from 'lucide-react'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 import NotificationCenter from '@/components/notifications/NotificationCenter'

@@ -19,7 +19,7 @@ export async function measureAsyncPerformance<T>(
 }
 
 // Report Web Vitals (for production monitoring)
-export function reportWebVitals(metric: any) {
+export function reportWebVitals(metric: Record<string, unknown>) {
   if (process.env.NODE_ENV === 'development') {
     console.log('[Web Vitals]', metric)
   }
@@ -31,7 +31,8 @@ export function reportWebVitals(metric: any) {
 // Memory usage monitoring (development only)
 export function logMemoryUsage() {
   if (process.env.NODE_ENV === 'development' && 'memory' in performance) {
-    const memory = (performance as any).memory
+    const memory = (performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory
+    if (!memory) return
     console.log('[Memory]', {
       used: `${(memory.usedJSHeapSize / 1048576).toFixed(2)} MB`,
       total: `${(memory.totalJSHeapSize / 1048576).toFixed(2)} MB`,
@@ -41,7 +42,7 @@ export function logMemoryUsage() {
 }
 
 // Image optimization helper
-export function getOptimizedImageUrl(url: string, width?: number, quality = 75) {
+export function getOptimizedImageUrl(url: string, _width?: number, _quality = 75) {
   // For dicebear avatars, they're already optimized SVGs
   if (url.includes('dicebear.com')) {
     return url
@@ -53,6 +54,7 @@ export function getOptimizedImageUrl(url: string, width?: number, quality = 75) 
 }
 
 // Debounce utility for search/filter inputs
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -73,6 +75,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Throttle utility for scroll events
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number

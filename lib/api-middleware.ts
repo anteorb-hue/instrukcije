@@ -179,7 +179,7 @@ export function logRequest(req: NextRequest) {
 }
 
 // Combine multiple middlewares
-export function compose(...middlewares: Function[]) {
+export function compose(...middlewares: ((req: NextRequest) => Promise<{ passed: boolean } | void>)[]) {
   return async (req: NextRequest) => {
     for (const middleware of middlewares) {
       const result = await middleware(req)

@@ -252,7 +252,7 @@ export default function PaymentsPage() {
                           {formatCurrency(payment.amount)}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Badge variant={getStatusColor(payment.status) as any}>
+                          <Badge variant={getStatusColor(payment.status) as 'success' | 'warning' | 'error' | 'info'}>
                             <div className="flex items-center space-x-1">
                               {getStatusIcon(payment.status)}
                               <span>{getStatusLabel(payment.status)}</span>

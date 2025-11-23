@@ -456,7 +456,7 @@ export const getStudentStats = async (studentId: string) => {
 
 // Availability helpers
 export const getTutorAvailability = async (tutorId: string, date?: Date) => {
-  const where: any = { tutorId }
+  const where: { tutorId: string; dayOfWeek?: number } = { tutorId }
 
   if (date) {
     const dayOfWeek = date.getDay()

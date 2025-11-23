@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { X, AlertCircle, CheckCircle, User, Mail, Lock, Phone, BookOpen, Target } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import Card from '@/components/ui/Card'
 
 interface AddChildModalProps {
   isOpen: boolean

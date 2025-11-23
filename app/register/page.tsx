@@ -66,8 +66,9 @@ export default function RegisterPage() {
 
       toast.success('Uspješna registracija! Prijavite se.')
       router.push('/login')
-    } catch (error: any) {
-      toast.error(error.message || 'Došlo je do greške')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Došlo je do greške'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }

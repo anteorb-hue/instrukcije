@@ -2,7 +2,7 @@
 
 export interface ExportOptions {
   filename: string
-  data: any[]
+  data: Record<string, unknown>[]
   columns?: string[]
   format?: 'csv' | 'json'
 }
@@ -126,9 +126,9 @@ export function printReport(elementId: string) {
 }
 
 // Format data for export
-export function formatDataForExport(data: any[], dateFields: string[] = []) {
+export function formatDataForExport(data: Record<string, unknown>[], dateFields: string[] = []) {
   return data.map(item => {
-    const formatted: any = {}
+    const formatted: Record<string, unknown> = {}
 
     Object.keys(item).forEach(key => {
       let value = item[key]

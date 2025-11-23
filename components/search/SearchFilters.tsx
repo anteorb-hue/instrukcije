@@ -6,7 +6,14 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
 interface SearchFiltersProps {
-  onSearch: (filters: any) => void
+  onSearch: (filters: {
+    query: string
+    subject?: string
+    educationLevel?: string
+    minPrice?: number
+    maxPrice?: number
+    minRating?: number
+  }) => void
 }
 
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {

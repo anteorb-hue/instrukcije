@@ -51,10 +51,10 @@ export async function PUT(
     })
 
     return NextResponse.json(reward)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating reward:', error)
 
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json({ error: 'Reward not found' }, { status: 404 })
     }
 
@@ -85,10 +85,10 @@ export async function DELETE(
     })
 
     return NextResponse.json({ message: 'Reward deleted successfully' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting reward:', error)
 
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json({ error: 'Reward not found' }, { status: 404 })
     }
 

@@ -112,7 +112,7 @@ export default function BookingsPage() {
       const data = await response.json()
 
       // Transform API response to match frontend interface
-      const transformedBookings: Booking[] = data.map((booking: any) => {
+      const transformedBookings: Booking[] = data.map((booking: Record<string, unknown>) => {
         // Map API status to frontend status
         let frontendStatus: 'upcoming' | 'completed' | 'cancelled' | 'rescheduled' = 'upcoming'
         if (booking.status === 'COMPLETED') frontendStatus = 'completed'

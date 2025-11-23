@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const where: any = { userPointsId: userPoints.id }
+    const where: { userPointsId: string; type?: string } = { userPointsId: userPoints.id }
     if (type) {
       where.type = type
     }

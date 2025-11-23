@@ -35,7 +35,7 @@ export async function uploadFile(
   const uploadPath = join(UPLOAD_DIR, folder)
   try {
     await mkdir(uploadPath, { recursive: true })
-  } catch (error) {
+  } catch {
     // Directory might already exist
   }
 

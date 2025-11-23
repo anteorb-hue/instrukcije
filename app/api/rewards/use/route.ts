@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { useReward } from '@/lib/rewards'
+import { applyReward } from '@/lib/rewards'
 
 /**
  * POST /api/rewards/use
@@ -25,24 +25,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const reward = await useReward(rewardId, session.user.id, bookingId)
+    const reward = await applyReward(rewardId, session.user.id, bookingId)
 
     return NextResponse.json({
       success: true,
       reward,
       message: 'Nagrada je uspješno iskorištena!',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error using reward:', error)
 
-    if (error.message === 'Reward not found or already used') {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage === 'Reward not found or already used') {
       return NextResponse.json(
         { error: 'Nagrada nije pronađena ili je već iskorištena' },
         { status: 404 }
       )
     }
 
-    if (error.message === 'Reward has expired') {
+    if (errorMessage === 'Reward has expired') {
       return NextResponse.json(
         { error: 'Nagrada je istekla' },
         { status: 400 }

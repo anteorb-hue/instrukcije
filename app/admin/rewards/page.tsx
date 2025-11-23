@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
-import Input from '@/components/ui/Input'
 import {
   Plus,
   Edit2,
@@ -16,7 +15,6 @@ import {
   Star,
   Crown,
   Percent,
-  DollarSign,
   Loader2,
 } from 'lucide-react'
 
@@ -183,7 +181,7 @@ export default function AdminRewardsPage() {
     })
   }
 
-  const updateReward = (id: string, field: string, value: any) => {
+  const updateReward = (id: string, field: string, value: string | number | boolean | null) => {
     setRewards((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
     )
@@ -275,7 +273,7 @@ export default function AdminRewardsPage() {
               <select
                 className="w-full border rounded-lg px-3 py-2"
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               >
                 {REWARD_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -342,7 +340,7 @@ export default function AdminRewardsPage() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    userRole: e.target.value ? (e.target.value as any) : null,
+                    userRole: e.target.value ? (e.target.value as 'TUTOR' | 'STUDENT') : null,
                   })
                 }
               >
@@ -534,7 +532,7 @@ export default function AdminRewardsPage() {
           <Card className="p-12 text-center text-gray-500">
             <Award className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <p className="text-lg font-medium">Nema nagrada u katalogu</p>
-            <p className="text-sm mt-1">Kliknite "Dodaj nagradu" za početak</p>
+            <p className="text-sm mt-1">Kliknite &quot;Dodaj nagradu&quot; za početak</p>
           </Card>
         )}
       </div>

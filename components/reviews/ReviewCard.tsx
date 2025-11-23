@@ -16,7 +16,6 @@ import {
 } from 'lucide-react'
 import StarRating from './StarRating'
 import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
 
 interface Review {
   id: string

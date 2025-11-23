@@ -3,9 +3,6 @@
 import React, { useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Button from '@/components/ui/Button'
-import Badge from '@/components/ui/Badge'
 
 interface BookingCalendarProps {
   availability: Array<{
@@ -61,7 +58,7 @@ export default function BookingCalendar({
     })
   }
 
-  const handleDateChange = (value: any) => {
+  const handleDateChange = (value: Date) => {
     setSelectedDate(value)
     setSelectedTime(null)
   }

@@ -527,7 +527,7 @@ export default function LessonsPage() {
                         Bilješke instruktora
                       </h4>
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <p className="text-gray-700 italic">"{lesson.teacherNotes}"</p>
+                        <p className="text-gray-700 italic">&quot;{lesson.teacherNotes}&quot;</p>
                       </div>
                     </div>
 

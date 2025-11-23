@@ -40,10 +40,11 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ url }, { status: 200 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Upload error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Greška pri uploadu'
     return NextResponse.json(
-      { error: error.message || 'Greška pri uploadu' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

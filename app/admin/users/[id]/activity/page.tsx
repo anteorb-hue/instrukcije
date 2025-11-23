@@ -13,7 +13,6 @@ import {
   LogIn,
   LogOut,
   Edit,
-  Trash2,
   DollarSign,
   BookOpen,
   Mail,
@@ -21,7 +20,6 @@ import {
   Shield,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Download,
 } from 'lucide-react'
 
@@ -257,7 +255,7 @@ export default function UserActivityPage() {
             <div className="flex flex-wrap gap-3">
               <select
                 value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value as any)}
+                onChange={(e) => setTimeFilter(e.target.value as 'all' | '24h' | '7d' | '30d' | '90d')}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">Sve vrijeme</option>
@@ -297,7 +295,6 @@ export default function UserActivityPage() {
         <div className="space-y-4">
           {filteredActivities.map((activity, index) => {
             const Icon = getActivityIcon(activity.type)
-            const isFirst = index === 0
             const isLast = index === filteredActivities.length - 1
 
             return (

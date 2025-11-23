@@ -27,7 +27,6 @@ import {
   ChevronRight,
   Eye,
   Star,
-  TrendingUp,
   DollarSign,
   AlertTriangle,
 } from 'lucide-react'

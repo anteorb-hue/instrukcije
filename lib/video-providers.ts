@@ -1,4 +1,5 @@
 import axios from 'axios'
+import jwt from 'jsonwebtoken'
 
 // Zoom Integration
 export async function createZoomMeeting(params: {
@@ -129,7 +130,7 @@ export async function createGoogleMeetMeeting(params: {
     )
 
     const meetingUrl = response.data.conferenceData?.entryPoints?.find(
-      (ep: any) => ep.entryPointType === 'video'
+      (ep: { entryPointType?: string; uri?: string }) => ep.entryPointType === 'video'
     )?.uri || response.data.hangoutLink
 
     return {
@@ -137,8 +138,9 @@ export async function createGoogleMeetMeeting(params: {
       meetingUrl,
       password: undefined,
     }
-  } catch (error: any) {
-    console.error('Error creating Google Meet meeting:', error.response?.data || error)
+  } catch (error: unknown) {
+    const errorData = error && typeof error === 'object' && 'response' in error ? (error as { response?: { data?: unknown } }).response?.data : error
+    console.error('Error creating Google Meet meeting:', errorData)
     throw new Error('Failed to create Google Meet meeting')
   }
 }
@@ -168,7 +170,6 @@ async function getGoogleAccessToken() {
     }
 
     // Sign JWT (requires jose or jsonwebtoken library)
-    const jwt = require('jsonwebtoken')
     const token = jwt.sign(payload, jwtClient.key, { algorithm: 'RS256' })
 
     // Exchange JWT for access token
@@ -235,8 +236,9 @@ export async function createTeamsMeeting(params: {
       meetingUrl: response.data.joinWebUrl || response.data.joinUrl,
       password: undefined,
     }
-  } catch (error: any) {
-    console.error('Error creating Teams meeting:', error.response?.data || error)
+  } catch (error: unknown) {
+    const errorData = error && typeof error === 'object' && 'response' in error ? (error as { response?: { data?: unknown } }).response?.data : error
+    console.error('Error creating Teams meeting:', errorData)
     throw new Error('Failed to create Microsoft Teams meeting')
   }
 }

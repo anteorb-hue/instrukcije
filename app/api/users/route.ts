@@ -67,7 +67,7 @@ export async function PUT(req: Request) {
     const { name, bio, phone, avatar, password, ...profileData } = body
 
     // Update basic user info
-    const updateData: any = {}
+    const updateData: { name?: string; bio?: string; phone?: string; avatar?: string } = {}
     if (name) updateData.name = name
     if (bio !== undefined) updateData.bio = bio
     if (phone) updateData.phone = phone

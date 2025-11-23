@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Star, Upload, X, Image as ImageIcon, Video } from 'lucide-react'
+import { X, Image as ImageIcon, Video } from 'lucide-react'
 import StarRating from './StarRating'
 import Button from '@/components/ui/Button'
 import toast from 'react-hot-toast'
@@ -24,7 +24,7 @@ interface ReviewData {
 }
 
 export default function ReviewForm({
-  bookingId,
+  bookingId: _bookingId,
   tutorName,
   onSubmit,
   onCancel,

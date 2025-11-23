@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import {
@@ -15,9 +14,6 @@ import {
   Activity,
   Download,
   RefreshCw,
-  Search,
-  Filter,
-  Calendar,
   Star,
   Award,
   Clock,
@@ -96,7 +92,6 @@ interface RecentActivity {
 
 export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
-  const [searchQuery, setSearchQuery] = useState('')
 
   // Mock platform stats
   const stats: PlatformStats = {
@@ -713,7 +708,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-4">
-              {topSubjects.map((subject, index) => (
+              {topSubjects.map((subject) => (
                 <div
                   key={subject.id}
                   className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 transition-all"

@@ -50,7 +50,7 @@ export async function GET(req: Request) {
         },
         ...(tier ? {
           userPoints: {
-            currentTier: tier as any,
+            currentTier: tier as 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'ELITE',
           },
         } : {}),
         ...(query ? {

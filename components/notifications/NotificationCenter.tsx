@@ -30,7 +30,7 @@ interface Notification {
 }
 
 export default function NotificationCenter() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)

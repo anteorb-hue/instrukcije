@@ -93,7 +93,7 @@ export async function addPoints(
     bookingId?: string
     reviewId?: string
     description?: string
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   }
 ) {
   // Get or create user points record
@@ -398,7 +398,7 @@ export async function redeemReward(
   options?: {
     validDays?: number
     description?: string
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   }
 ) {
   const userPoints = await prisma.userPoints.findUnique({
@@ -568,7 +568,7 @@ export async function getAvailableRewards(userId?: string) {
 /**
  * Use a reward
  */
-export async function useReward(rewardId: string) {
+export async function applyReward(rewardId: string) {
   const reward = await prisma.userReward.findUnique({
     where: { id: rewardId },
   })

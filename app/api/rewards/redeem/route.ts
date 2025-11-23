@@ -58,10 +58,12 @@ export async function POST(request: NextRequest) {
       reward,
       message: `Uspješno ste iskoristili ${pointsCost} bodova!`,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error redeeming reward:', error)
 
-    if (error.message === 'Insufficient points') {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage === 'Insufficient points') {
       return NextResponse.json(
         { error: 'Nemate dovoljno bodova za ovu nagradu' },
         { status: 400 }

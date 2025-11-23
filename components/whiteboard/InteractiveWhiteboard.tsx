@@ -15,17 +15,9 @@ import {
   Minus,
   Move
 } from 'lucide-react'
-import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 
 type Tool = 'pencil' | 'eraser' | 'rectangle' | 'circle' | 'text' | 'line' | 'select'
-
-interface DrawingData {
-  tool: Tool
-  color: string
-  lineWidth: number
-  points: { x: number; y: number }[]
-}
 
 export default function InteractiveWhiteboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -85,6 +77,7 @@ export default function InteractiveWhiteboard() {
     saveToHistory()
 
     return () => window.removeEventListener('resize', resizeCanvas)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const saveToHistory = () => {

@@ -289,7 +289,7 @@ export default function CreateGroupLessonPage() {
                   </label>
                   <select
                     value={level}
-                    onChange={(e) => setLevel(e.target.value as any)}
+                    onChange={(e) => setLevel(e.target.value as 'OSNOVNA_SKOLA' | 'SREDNJA_SKOLA' | 'FAKULTET' | 'OSTALO')}
                     className="input-field"
                     required
                   >
