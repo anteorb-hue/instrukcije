@@ -20,7 +20,7 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import BookingCalendar from '@/components/calendar/BookingCalendar'
-import { formatCurrency, getDayOfWeekName } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 
 export default function TutorProfilePage() {
   const params = useParams()

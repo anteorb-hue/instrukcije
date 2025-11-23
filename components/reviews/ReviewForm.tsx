@@ -24,7 +24,8 @@ interface ReviewData {
 }
 
 export default function ReviewForm({
-  bookingId: _bookingId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  bookingId,
   tutorName,
   onSubmit,
   onCancel,

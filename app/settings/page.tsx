@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Bell, Lock, CreditCard, Globe, Shield, Mail } from 'lucide-react'
+import { Bell, Lock, Globe, Shield, Mail } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'

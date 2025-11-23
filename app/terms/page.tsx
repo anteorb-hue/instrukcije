@@ -110,7 +110,7 @@ export default function TermsPage() {
             </h2>
             <p className="text-gray-700 leading-relaxed">
               Instrukcije.hr nije odgovoran za kvalitetu instrukcija ili ponašanje korisnika. Ne
-              garantujemo određene rezultate učenja. Platforma se pruža "kakva jest" bez ikakvih
+              garantujemo određene rezultate učenja. Platforma se pruža &quot;kakva jest&quot; bez ikakvih
               garancija.
             </p>
           </section>
