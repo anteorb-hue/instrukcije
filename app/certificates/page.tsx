@@ -16,13 +16,10 @@ import {
   BookOpen,
   Zap,
   Crown,
-  Medal,
   Flame,
   Clock,
   MessageSquare,
-  FileText,
   Eye,
-  Filter,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'

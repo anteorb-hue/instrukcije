@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Plus, Trash2, Save } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import { getDayOfWeekName } from '@/lib/utils'
+import {} from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function AvailabilityPage() {
@@ -24,8 +24,8 @@ export default function AvailabilityPage() {
         id: Date.now().toString(),
         dayOfWeek,
         startTime: '09:00',
-        endTime: '17:00',
-      },
+        endTime: '17:00'
+},
     ])
   }
 

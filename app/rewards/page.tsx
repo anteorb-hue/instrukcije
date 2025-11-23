@@ -21,7 +21,7 @@ import {
   Crown,
   Percent,
   DollarSign,
-  Loader2,
+  Loader2
 } from 'lucide-react'
 
 // Default/loading data
@@ -32,7 +32,7 @@ const defaultUserData = {
   currentTier: 'BRONZE',
   pointsToNextTier: 500,
   referralCode: '',
-  totalReferrals: 0,
+  totalReferrals: 0
 }
 
 const tiers = [
@@ -42,24 +42,24 @@ const tiers = [
     maxPoints: 499,
     icon: '🥉',
     color: 'from-orange-400 to-orange-600',
-    benefits: ['Osnovna vidljivost', 'Standardna podrška'],
-  },
+    benefits: ['Osnovna vidljivost', 'Standardna podrška']
+},
   {
     name: 'Silver',
     minPoints: 500,
     maxPoints: 1499,
     icon: '🥈',
     color: 'from-gray-400 to-gray-600',
-    benefits: ['+10% vidljivost', 'Prioritet u poruč', 'Silver badge'],
-  },
+    benefits: ['+10% vidljivost', 'Prioritet u poruč', 'Silver badge']
+},
   {
     name: 'Gold',
     minPoints: 1500,
     maxPoints: 2999,
     icon: '🥇',
     color: 'from-yellow-400 to-yellow-600',
-    benefits: ['+25% vidljivost', 'Prioritet booking', 'Gold badge', '5% popust provizije'],
-  },
+    benefits: ['+25% vidljivost', 'Prioritet booking', 'Gold badge', '5% popust provizije']
+},
   {
     name: 'Platinum',
     minPoints: 3000,
@@ -72,8 +72,8 @@ const tiers = [
       'Platinum badge',
       '10% popust provizije',
       'VIP support',
-    ],
-  },
+    ]
+},
   {
     name: 'Elite',
     minPoints: 5000,
@@ -87,8 +87,8 @@ const tiers = [
       '15% popust provizije',
       'Dediciran account manager',
       'Posebne promocije',
-    ],
-  },
+    ]
+},
 ]
 
 const availableRewards = [
@@ -99,8 +99,8 @@ const availableRewards = [
     points: 200,
     type: 'voucher',
     icon: Gift,
-    color: 'bg-green-100 text-green-600',
-  },
+    color: 'bg-green-100 text-green-600'
+},
   {
     id: '2',
     title: 'Featured Status',
@@ -108,8 +108,8 @@ const availableRewards = [
     points: 500,
     type: 'featured',
     icon: Star,
-    color: 'bg-yellow-100 text-yellow-600',
-  },
+    color: 'bg-yellow-100 text-yellow-600'
+},
   {
     id: '3',
     title: '5% Popust Provizije',
@@ -117,8 +117,8 @@ const availableRewards = [
     points: 500,
     type: 'discount',
     icon: Percent,
-    color: 'bg-blue-100 text-blue-600',
-  },
+    color: 'bg-blue-100 text-blue-600'
+},
   {
     id: '4',
     title: 'Besplatna Instrukcija',
@@ -126,8 +126,8 @@ const availableRewards = [
     points: 500,
     type: 'free_lesson',
     icon: Award,
-    color: 'bg-purple-100 text-purple-600',
-  },
+    color: 'bg-purple-100 text-purple-600'
+},
   {
     id: '5',
     title: '30 EUR Voucher',
@@ -135,8 +135,8 @@ const availableRewards = [
     points: 1000,
     type: 'voucher',
     icon: DollarSign,
-    color: 'bg-green-100 text-green-600',
-  },
+    color: 'bg-green-100 text-green-600'
+},
   {
     id: '6',
     title: 'Premium Profil',
@@ -144,8 +144,8 @@ const availableRewards = [
     points: 10000,
     type: 'premium',
     icon: Crown,
-    color: 'bg-purple-100 text-purple-600',
-  },
+    color: 'bg-purple-100 text-purple-600'
+},
 ]
 
 const pointsHistory = [
@@ -154,43 +154,43 @@ const pointsHistory = [
     points: 15,
     type: 'earned',
     reason: 'Završena instrukcija - Matematika',
-    date: new Date('2025-01-12'),
-  },
+    date: new Date('2025-01-12')
+},
   {
     id: '2',
     points: 5,
     type: 'earned',
     reason: 'Odlična ocjena (5⭐) od učenika',
-    date: new Date('2025-01-12'),
-  },
+    date: new Date('2025-01-12')
+},
   {
     id: '3',
     points: 3,
     type: 'earned',
     reason: 'Brza reakcija na upit (<30min)',
-    date: new Date('2025-01-11'),
-  },
+    date: new Date('2025-01-11')
+},
   {
     id: '4',
     points: -20,
     type: 'penalty',
     reason: 'Otkazivanje instrukcije u zadnji čas',
-    date: new Date('2025-01-10'),
-  },
+    date: new Date('2025-01-10')
+},
   {
     id: '5',
     points: 10,
     type: 'earned',
     reason: 'Završena instrukcija - Fizika',
-    date: new Date('2025-01-09'),
-  },
+    date: new Date('2025-01-09')
+},
   {
     id: '6',
     points: 50,
     type: 'earned',
     reason: 'Referral bonus - Novi učenik se registrirao',
-    date: new Date('2025-01-08'),
-  },
+    date: new Date('2025-01-08')
+},
 ]
 
 export default function RewardsPage() {
@@ -219,8 +219,8 @@ export default function RewardsPage() {
             currentTier: pointsData.currentTier || 'BRONZE',
             pointsToNextTier: pointsData.pointsToNextTier || 0,
             referralCode: pointsData.referralCode || '',
-            totalReferrals: pointsData.totalReferrals || 0,
-          })
+            totalReferrals: pointsData.totalReferrals || 0
+})
         }
 
         // Fetch available rewards catalog
@@ -235,8 +235,8 @@ export default function RewardsPage() {
             points: item.pointsCost,
             type: item.type.toLowerCase(),
             icon: getIconForType(item.type),
-            color: getColorForType(item.type),
-          }))
+            color: getColorForType(item.type)
+}))
           setRewardsData(mappedRewards)
         }
 
@@ -249,8 +249,8 @@ export default function RewardsPage() {
             points: t.points,
             type: t.type.toLowerCase(),
             reason: t.reason,
-            date: new Date(t.createdAt),
-          }))
+            date: new Date(t.createdAt)
+}))
           setHistoryData(mappedHistory)
         }
       } catch (error) {
@@ -314,8 +314,8 @@ export default function RewardsPage() {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
-      minute: '2-digit',
-    }).format(date)
+      minute: '2-digit'
+}).format(date)
   }
 
   const handleRedeemReward = async (reward: any) => {
@@ -332,17 +332,17 @@ export default function RewardsPage() {
       const response = await fetch('/api/rewards/redeem', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+},
         body: JSON.stringify({
           rewardType: reward.type.toUpperCase(),
           title: reward.title,
           pointsCost: reward.points,
           value: parseFloat(reward.description.match(/\d+/)?.[0] || '0'),
           validDays: 30,
-          description: reward.description,
-        }),
-      })
+          description: reward.description
+})
+})
 
       const data = await response.json()
 
@@ -357,8 +357,8 @@ export default function RewardsPage() {
           setUserData({
             ...userData,
             totalPoints: pointsData.totalPoints || 0,
-            currentTier: pointsData.currentTier || userData.currentTier,
-          })
+            currentTier: pointsData.currentTier || userData.currentTier
+})
         }
       } else {
         alert(data.error || 'Greška pri iskorištavanju nagrade')

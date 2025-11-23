@@ -7,13 +7,10 @@ import {
   Calendar,
   DollarSign,
   Users,
-  TrendingUp,
-  Clock,
   Star,
   BookOpen,
   Award,
   MessageSquare,
-  Bell,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -57,8 +54,8 @@ export default function DashboardPage() {
     totalStudents: 89,
     activeStudents: 24,
     averageRating: 4.9,
-    responseTime: 15,
-  }
+    responseTime: 15
+}
 
   const studentStats = {
     totalSessions: 42,
@@ -66,8 +63,8 @@ export default function DashboardPage() {
     totalSpent: 1260,
     thisMonthSpent: 180,
     activeTutors: 5,
-    averageRating: 4.8,
-  }
+    averageRating: 4.8
+}
 
   const earningsData = [
     { month: 'Jan', earnings: 320 },
@@ -96,8 +93,8 @@ export default function DashboardPage() {
       time: new Date('2025-01-17T15:00:00'),
       duration: 60,
       status: 'SCHEDULED',
-      meetingUrl: 'https://zoom.us/j/123456789',
-    },
+      meetingUrl: 'https://zoom.us/j/123456789'
+},
     {
       id: '2',
       student: 'Ana Kovač',
@@ -105,8 +102,8 @@ export default function DashboardPage() {
       time: new Date('2025-01-17T17:00:00'),
       duration: 60,
       status: 'SCHEDULED',
-      meetingUrl: 'https://meet.google.com/abc-defg-hij',
-    },
+      meetingUrl: 'https://meet.google.com/abc-defg-hij'
+},
     {
       id: '3',
       student: 'Ivan Jurić',
@@ -114,8 +111,8 @@ export default function DashboardPage() {
       time: new Date('2025-01-18T10:00:00'),
       duration: 90,
       status: 'SCHEDULED',
-      meetingUrl: 'https://teams.microsoft.com/l/meetup-join/...',
-    },
+      meetingUrl: 'https://teams.microsoft.com/l/meetup-join/...'
+},
   ]
 
   const recentActivities = [
@@ -123,26 +120,26 @@ export default function DashboardPage() {
       id: '1',
       type: 'booking',
       message: 'Nova rezervacija od Marko Petrović',
-      time: new Date('2025-01-16T14:30:00'),
-    },
+      time: new Date('2025-01-16T14:30:00')
+},
     {
       id: '2',
       type: 'review',
       message: 'Nova recenzija: 5 zvjezdica od Ana Kovač',
-      time: new Date('2025-01-16T12:15:00'),
-    },
+      time: new Date('2025-01-16T12:15:00')
+},
     {
       id: '3',
       type: 'message',
       message: 'Nova poruka od Ivan Jurić',
-      time: new Date('2025-01-16T10:45:00'),
-    },
+      time: new Date('2025-01-16T10:45:00')
+},
     {
       id: '4',
       type: 'payment',
       message: 'Primljeno plaćanje: €30',
-      time: new Date('2025-01-15T18:20:00'),
-    },
+      time: new Date('2025-01-15T18:20:00')
+},
   ]
 
   return (
