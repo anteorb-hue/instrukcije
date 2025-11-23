@@ -6,7 +6,6 @@ import {
   Calendar,
   Clock,
   Video,
-  DollarSign,
   Star,
   MapPin,
   Share2,
@@ -24,7 +23,6 @@ import {
   ChevronUp,
   UserCheck,
   Bell,
-  Copy,
   Check,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'

@@ -12,7 +12,6 @@ import {
   Filter,
   Heart,
   Share2,
-  Bookmark,
   BookOpen,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
@@ -245,7 +244,10 @@ export default function MaterialsPage() {
 
             {/* Results */}
             <div className="mb-4 text-sm text-gray-600">
-              Pronađeno {filteredMaterials.length} materijala
+              <span className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Pronađeno {filteredMaterials.length} materijala
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

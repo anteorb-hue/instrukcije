@@ -14,9 +14,7 @@ import {
   Plus,
   BookOpen,
   Award,
-  MessageSquare,
   CheckCircle,
-  AlertCircle,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -286,7 +284,8 @@ export default function GroupLessonsPage() {
               <option value="webinar">Webinar</option>
             </select>
 
-            <div className="text-sm text-gray-600 flex items-center">
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <Filter className="w-4 h-4" />
               {filteredLessons.length} rezultata
             </div>
           </div>

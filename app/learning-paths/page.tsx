@@ -13,10 +13,8 @@ import {
   Play,
   Target,
   Zap,
-  BarChart,
   Filter,
   Search,
-  ArrowRight,
   Layers,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
@@ -474,7 +472,10 @@ export default function LearningPathsPage() {
             </select>
 
             <div className="text-sm text-gray-600 flex items-center">
-              {activeTab === 'paths' ? filteredPaths.length : filteredCourses.length} rezultata
+              <span className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                {activeTab === 'paths' ? filteredPaths.length : filteredCourses.length} rezultata
+              </span>
             </div>
           </div>
         </div>

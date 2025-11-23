@@ -1,14 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import {
-  TrendingUp,
-  Award,
   Target,
-  BookOpen,
   Clock,
-  Star,
-  Calendar,
   CheckCircle,
   Trophy,
   Flame
@@ -18,7 +13,6 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import { Bar, Radar } from 'recharts'
 import {
-  LineChart,
   BarChart,
   RadarChart,
   PolarGrid,

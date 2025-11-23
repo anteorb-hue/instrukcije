@@ -15,7 +15,6 @@ import {
   MessageCircleMore,
   ArrowUp,
   ArrowDown,
-  ChevronDown,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -52,6 +51,7 @@ export default function ForumPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'unanswered'>('recent')
   const [showNewThreadModal, setShowNewThreadModal] = useState(false)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [newThread, setNewThread] = useState({
     title: '',
     content: '',
@@ -294,18 +294,28 @@ export default function ForumPage() {
               icon={<Search className="w-5 h-5" />}
             />
           </div>
-          <Button
-            variant="primary"
-            icon={<Plus className="w-5 h-5" />}
-            onClick={() => setShowNewThreadModal(true)}
-          >
-            Nova diskusija
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              icon={<Filter className="w-5 h-5" />}
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="lg:hidden"
+            >
+              Filtriraj
+            </Button>
+            <Button
+              variant="primary"
+              icon={<Plus className="w-5 h-5" />}
+              onClick={() => setShowNewThreadModal(true)}
+            >
+              Nova diskusija
+            </Button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
+          <div className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
             {/* Categories */}
             <Card className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Kategorije</h3>
@@ -379,12 +389,15 @@ export default function ForumPage() {
                   <button
                     key={sort}
                     onClick={() => setSortBy(sort)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                       sortBy === sort
                         ? 'bg-primary-600 text-white'
                         : 'bg-white text-gray-700 hover:bg-gray-100'
                     }`}
                   >
+                    {sort === 'recent' && <Clock className="w-4 h-4" />}
+                    {sort === 'popular' && <TrendingUp className="w-4 h-4" />}
+                    {sort === 'unanswered' && <MessageSquare className="w-4 h-4" />}
                     {sort === 'recent'
                       ? 'Najnovije'
                       : sort === 'popular'

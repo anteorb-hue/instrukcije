@@ -167,9 +167,21 @@ export default function TutorReviewsPage({ params }: TutorReviewsPageProps) {
           <p className="text-gray-600">{tutorData.totalReviews} recenzija</p>
         </div>
 
+        {/* Mobile Filter Toggle */}
+        <div className="lg:hidden mb-4">
+          <Button
+            variant="outline"
+            icon={<Filter className="w-5 h-5" />}
+            onClick={() => setShowFilters(!showFilters)}
+            fullWidth
+          >
+            {showFilters ? 'Sakrij filtere' : 'Prikaži filtere'}
+          </Button>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Sidebar - Stats */}
-          <div className="lg:col-span-1">
+          <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             <Card className="sticky top-24">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">
                 Pregled ocjena
@@ -292,20 +304,24 @@ export default function TutorReviewsPage({ params }: TutorReviewsPageProps) {
           {/* Right - Reviews List */}
           <div className="lg:col-span-2">
             {/* Sort Options */}
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <p className="text-sm text-gray-600 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
                 Prikazano {filteredReviews.length} od {tutorData.totalReviews} recenzija
               </p>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'newest' | 'highest' | 'lowest' | 'helpful')}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-              >
-                <option value="recent">Najnovije</option>
-                <option value="helpful">Najkorisnije</option>
-                <option value="rating_high">Najviša ocjena</option>
-                <option value="rating_low">Najniža ocjena</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'newest' | 'highest' | 'lowest' | 'helpful')}
+                  className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm appearance-none"
+                >
+                  <option value="recent">Najnovije</option>
+                  <option value="helpful">Najkorisnije</option>
+                  <option value="rating_high">Najviša ocjena</option>
+                  <option value="rating_low">Najniža ocjena</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
+              </div>
             </div>
 
             {/* Active Filters */}

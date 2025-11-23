@@ -11,15 +11,12 @@ import {
   Star,
   Bookmark,
   Search,
-  Filter,
   Image as ImageIcon,
   FileText,
   Zap,
   User,
-  Award,
   ThumbsUp,
   Share2,
-  Download,
   X,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'

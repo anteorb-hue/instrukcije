@@ -6,27 +6,19 @@ import {
   TrendingUp,
   Calendar,
   DollarSign,
-  Award,
   AlertCircle,
   CheckCircle,
   Clock,
   BookOpen,
   MessageSquare,
-  Settings,
   Plus,
-  Eye,
   Download,
   Star,
-  Target,
-  BarChart,
-  Shield,
-  Bell,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
-import { useRouter } from 'next/navigation'
 
 interface Child {
   id: string

@@ -8,7 +8,6 @@ import {
   Video,
   DollarSign,
   BookOpen,
-  Tag,
   FileText,
   Upload,
   X,
@@ -16,7 +15,6 @@ import {
   AlertCircle,
   CheckCircle,
   Save,
-  Eye,
   ArrowLeft,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'

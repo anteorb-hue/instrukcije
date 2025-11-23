@@ -5,24 +5,16 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   Users,
-  TrendingUp,
   Calendar,
   DollarSign,
-  Award,
   AlertCircle,
-  CheckCircle,
   Clock,
   BookOpen,
-  MessageSquare,
-  Settings,
   Plus,
-  Eye,
-  Download,
   Star,
-  Target,
-  BarChart,
   Shield,
   Bell,
+  Award,
 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
