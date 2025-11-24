@@ -7,15 +7,10 @@ import {
   Target,
   TrendingUp,
   Award,
-  BookOpen,
   Play,
   CheckCircle,
-  Lock,
-  Filter,
   Search,
-  Calendar,
   BarChart,
-  Star,
   AlertCircle,
   Users,
 } from 'lucide-react'
@@ -189,7 +184,7 @@ export default function TestsPage() {
     return labels[type as keyof typeof labels] || type
   }
 
-  const getDifficultyColor = (difficulty: string) => {
+  const _getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
         return 'text-green-600'

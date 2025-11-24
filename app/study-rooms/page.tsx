@@ -10,13 +10,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  MessageSquare,
-  Video,
-  Mic,
-  MicOff,
-  VideoOff,
-  Settings,
-  LogOut,
   Coffee,
   Target,
   TrendingUp,
@@ -26,7 +19,6 @@ import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
-import Input from '@/components/ui/Input'
 
 interface StudyRoom {
   id: string
@@ -60,12 +52,9 @@ interface Participant {
 }
 
 export default function StudyRoomsPage() {
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null)
   const [pomodoroTime, setPomodoroTime] = useState(25 * 60) // 25 minutes in seconds
   const [isTimerRunning, setIsTimerRunning] = useState(false)
-  const [isBreak, setIsBreak] = useState(false)
-  const [cyclesCompleted, setCyclesCompleted] = useState(0)
 
   // Mock data
   const studyRooms: StudyRoom[] = [

@@ -7,8 +7,8 @@ import { Loader2 } from 'lucide-react'
 
 export default function TutorsPage() {
   const [loading, setLoading] = useState(true)
-  const [tutors, setTutors] = useState<any[]>([])
-  const [initialLoad, setInitialLoad] = useState(true)
+  const [tutors, setTutors] = useState<Tutor[]>([])
+  const [_initialLoad, setInitialLoad] = useState(true)
 
   // Load all tutors on mount
   useEffect(() => {

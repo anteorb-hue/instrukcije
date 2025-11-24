@@ -3,7 +3,6 @@
 import React from 'react'
 import { Phone, PhoneOff, Video } from 'lucide-react'
 import Avatar from './ui/Avatar'
-import Button from './ui/Button'
 
 interface IncomingCallProps {
   caller: {

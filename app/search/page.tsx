@@ -95,7 +95,7 @@ export default function AdvancedSearchPage() {
     'Ekonomija',
   ]
 
-  const levels = [
+  const _levels = [
     'Osnovna škola',
     'Srednja škola',
     'Fakultet',
@@ -350,7 +350,7 @@ export default function AdvancedSearchPage() {
     }))
   }
 
-  const toggleLevelFilter = (level: string) => {
+  const _toggleLevelFilter = (level: string) => {
     setFilters((prev) => ({
       ...prev,
       levels: prev.levels.includes(level)

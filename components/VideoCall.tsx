@@ -5,7 +5,6 @@ import { X, Mic, MicOff, Video, VideoOff, Phone } from 'lucide-react'
 import { Socket } from 'socket.io-client'
 import { useWebRTC } from '@/hooks/useWebRTC'
 import Avatar from './ui/Avatar'
-import Button from './ui/Button'
 
 interface VideoCallProps {
   socket: Socket | null
