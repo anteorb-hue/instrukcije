@@ -29,7 +29,7 @@ export default function EditProfilePage() {
     educationLevels: [],
   })
 
-  const [_avatar, setAvatar] = useState<File | null>(null)
+  const [, setAvatar] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {

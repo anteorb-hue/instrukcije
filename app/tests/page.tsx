@@ -184,7 +184,7 @@ export default function TestsPage() {
     return labels[type as keyof typeof labels] || type
   }
 
-  const _getDifficultyColor = (difficulty: string) => {
+  const _unusedGetDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
         return 'text-green-600'

@@ -12,7 +12,6 @@ import {
   Star,
   MapPin,
   Clock,
-  DollarSign,
   Calendar,
   BookOpen,
   Users,
@@ -95,7 +94,7 @@ export default function AdvancedSearchPage() {
     'Ekonomija',
   ]
 
-  const _levels = [
+  const _unusedLevels = [
     'Osnovna škola',
     'Srednja škola',
     'Fakultet',
@@ -350,7 +349,7 @@ export default function AdvancedSearchPage() {
     }))
   }
 
-  const _toggleLevelFilter = (level: string) => {
+  const _unusedToggleLevelFilter = (level: string) => {
     setFilters((prev) => ({
       ...prev,
       levels: prev.levels.includes(level)
@@ -682,7 +681,7 @@ export default function AdvancedSearchPage() {
                 <span className="text-sm text-gray-600">Sortiraj:</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value as 'relevance' | 'rating' | 'reviews' | 'price-low' | 'price-high')}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="relevance">Relevantnost</option>

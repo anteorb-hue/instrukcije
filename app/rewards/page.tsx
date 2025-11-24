@@ -228,7 +228,7 @@ export default function RewardsPage() {
         if (catalogRes.ok) {
           const catalogData = await catalogRes.json()
           // Map catalog data to UI format
-          const mappedRewards = catalogData.map((item: any) => ({
+          const mappedRewards = catalogData.map((item: Record<string, unknown>) => ({
             id: item.id,
             title: item.title,
             description: item.description,
@@ -244,7 +244,7 @@ export default function RewardsPage() {
         const historyRes = await fetch('/api/rewards/history?limit=20')
         if (historyRes.ok) {
           const historyResData = await historyRes.json()
-          const mappedHistory = historyResData.transactions.map((t: any) => ({
+          const mappedHistory = historyResData.transactions.map((t: Record<string, unknown>) => ({
             id: t.id,
             points: t.points,
             type: t.type.toLowerCase(),
@@ -318,7 +318,7 @@ export default function RewardsPage() {
 }).format(date)
   }
 
-  const handleRedeemReward = async (reward: any) => {
+  const handleRedeemReward = async (reward: { points: number; id: string }) => {
     if (userData.totalPoints < reward.points) {
       alert('Nemate dovoljno bodova za ovu nagradu!')
       return
@@ -615,7 +615,7 @@ export default function RewardsPage() {
                 🏆 Rangovi
               </h2>
               <div className="space-y-3">
-                {tiers.map((tier, index) => {
+                {tiers.map((tier) => {
                   const isCurrentTier = tier.name.toUpperCase() === userData.currentTier
                   const isUnlocked = userData.totalPoints >= tier.minPoints
 

@@ -239,7 +239,7 @@ export default function CompareTutorsPage() {
                         const value = tutor[metric.key as keyof Tutor]
                         return (
                           <td key={tutor.id} className="py-4 px-6 text-center text-gray-900">
-                            {metric.format(value as any)}
+                            {metric.format(value as number | string)}
                           </td>
                         )
                       })}

@@ -8,14 +8,14 @@ import { Loader2 } from 'lucide-react'
 export default function TutorsPage() {
   const [loading, setLoading] = useState(true)
   const [tutors, setTutors] = useState<Tutor[]>([])
-  const [_initialLoad, setInitialLoad] = useState(true)
+  const [, setInitialLoad] = useState(true)
 
   // Load all tutors on mount
   useEffect(() => {
     fetchTutors({})
   }, [])
 
-  const fetchTutors = async (filters: any) => {
+  const fetchTutors = async (filters: Record<string, unknown>) => {
     try {
       setLoading(true)
 
@@ -41,7 +41,7 @@ export default function TutorsPage() {
       const data = await response.json()
 
       // Transform API response to match TutorCard interface
-      const transformedTutors = data.map((tutor: any) => ({
+      const transformedTutors = data.map((tutor: Record<string, unknown>) => ({
         id: tutor.id,
         name: tutor.name,
         avatar: tutor.avatar,
@@ -49,7 +49,7 @@ export default function TutorsPage() {
         hourlyRate: tutor.tutorProfile?.hourlyRate || 0,
         averageRating: tutor.tutorProfile?.averageRating || 0,
         totalSessions: tutor.tutorProfile?.totalLessons || 0,
-        subjects: tutor.tutorProfile?.subjects?.map((s: any) => s.subject.name) || [],
+        subjects: (tutor.tutorProfile as Record<string, unknown>)?.subjects?.map((s: Record<string, unknown>) => (s.subject as Record<string, unknown>).name) || [],
         verified: tutor.tutorProfile?.verified || false,
         availableOnline: true, // Could add this field to DB if needed
         availableInPerson: true, // Could add this field to DB if needed
@@ -67,7 +67,7 @@ export default function TutorsPage() {
     }
   }
 
-  const handleSearch = async (filters: any) => {
+  const handleSearch = async (filters: Record<string, unknown>) => {
     await fetchTutors(filters)
   }
 
