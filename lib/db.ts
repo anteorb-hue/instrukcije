@@ -157,7 +157,7 @@ export const searchTutors = async (params: {
   maxPrice?: number
   minRating?: number
 }) => {
-  const { query, subject: _unusedSubject, educationLevel, minPrice, maxPrice, minRating } = params
+  const { query, educationLevel, minPrice, maxPrice, minRating } = params
 
   return prisma.user.findMany({
     where: {
