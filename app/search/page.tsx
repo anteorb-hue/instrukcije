@@ -94,15 +94,6 @@ export default function AdvancedSearchPage() {
     'Ekonomija',
   ]
 
-  const _unusedLevels = [
-    'Osnovna škola',
-    'Srednja škola',
-    'Fakultet',
-    'Početnici',
-    'Napredni',
-    'Profesionalni',
-  ]
-
   const languages = [
     'Hrvatski',
     'Engleski',
@@ -346,15 +337,6 @@ export default function AdvancedSearchPage() {
       subjects: prev.subjects.includes(subject)
         ? prev.subjects.filter((s) => s !== subject)
         : [...prev.subjects, subject],
-    }))
-  }
-
-  const _unusedToggleLevelFilter = (level: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      levels: prev.levels.includes(level)
-        ? prev.levels.filter((l) => l !== level)
-        : [...prev.levels, level],
     }))
   }
 

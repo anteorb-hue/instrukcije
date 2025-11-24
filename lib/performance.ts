@@ -42,7 +42,7 @@ export function logMemoryUsage() {
 }
 
 // Image optimization helper
-export function getOptimizedImageUrl(url: string, _width?: number, _quality = 75) {
+export function getOptimizedImageUrl(url: string) {
   // For dicebear avatars, they're already optimized SVGs
   if (url.includes('dicebear.com')) {
     return url
